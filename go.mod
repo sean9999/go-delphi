@@ -1,4 +1,4 @@
-module github.com/sean9999/go-msg
+module github.com/sean9999/go-delphi
 
 go 1.23.0
 

@@ -1,4 +1,4 @@
-package msg
+package delphi
 
 import (
 	"crypto"
