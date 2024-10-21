@@ -1,8 +1,8 @@
 package delphi
 
 import (
-	"crypto/ecdh"
 	"crypto/sha256"
+	"encoding"
 	"errors"
 	"io"
 
@@ -22,7 +22,7 @@ type encrypter struct{}
 type decrypter struct{}
 
 // generate an ephemeral X25519 key-pair, and derive a shared secret from it and the recipient's public key
-func generateSharedSecret(counterPartyPubKey *ecdh.PublicKey, randomness io.Reader) ([]byte, []byte, error) {
+func generateSharedSecret(counterPartyPubKey []byte, randomness io.Reader) (sharedSecret []byte, ephemeralPubKey []byte, err error) {
 
 	//	generate an ephemeral private key
 	ephemeralPrivKey := make([]byte, curve25519.ScalarSize)
@@ -31,25 +31,25 @@ func generateSharedSecret(counterPartyPubKey *ecdh.PublicKey, randomness io.Read
 	}
 
 	//	extract the public key from it
-	ephemeralPubKey, err := curve25519.X25519(ephemeralPrivKey, curve25519.Basepoint)
+	ephemeralPubKey, err = curve25519.X25519(ephemeralPrivKey, curve25519.Basepoint)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	//	derive a key from the counterparty's public key and ephemeral private key
-	secretScalar, err := curve25519.X25519(ephemeralPrivKey, counterPartyPubKey.Bytes())
+	secretScalar, err := curve25519.X25519(ephemeralPrivKey, counterPartyPubKey)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	//	our salt is the ephemeral public key plus the counterparty's public key
-	salt := make([]byte, len(ephemeralPubKey)+len(counterPartyPubKey.Bytes()))
+	salt := make([]byte, len(ephemeralPubKey)+len(counterPartyPubKey))
 	copy(salt[:len(ephemeralPubKey)], ephemeralPubKey)
-	copy(salt[len(ephemeralPubKey):], counterPartyPubKey.Bytes())
+	copy(salt[len(ephemeralPubKey):], counterPartyPubKey)
 
 	//	derive a symetric key. This is our shared secret
 	h := hkdf.New(sha256.New, secretScalar, salt, []byte(GLOBAL_SALT))
-	sharedSecret := make([]byte, chacha20poly1305.KeySize)
+	sharedSecret = make([]byte, chacha20poly1305.KeySize)
 	if _, err := io.ReadFull(h, sharedSecret); err != nil {
 		return nil, nil, err
 	}
@@ -60,7 +60,7 @@ func generateSharedSecret(counterPartyPubKey *ecdh.PublicKey, randomness io.Read
 	return sharedSecret, ephemeralPubKey, nil
 }
 
-func extractSharedSecret(ephemeralPubKey []byte, recipientPrivKey []byte, recipientPubKey []byte) ([]byte, error) {
+func extractSharedSecret(ephemeralPubKey, recipientPrivKey, recipientPubKey []byte) ([]byte, error) {
 
 	sharedScalar, err := curve25519.X25519(recipientPrivKey, ephemeralPubKey)
 	if err != nil {
@@ -79,18 +79,26 @@ func extractSharedSecret(ephemeralPubKey []byte, recipientPrivKey []byte, recipi
 	return sharedSecret, nil
 }
 
-func encrypt(key, plaintext []byte) ([]byte, error) {
-	aead, err := chacha20poly1305.New(key)
+func encrypt(sharedSec, plainText, nonce []byte, metadata encoding.BinaryMarshaler) ([]byte, error) {
+	aead, err := chacha20poly1305.New(sharedSec)
 	if err != nil {
 		return nil, err
 	}
-	return aead.Seal(nil, UniversalNonce, plaintext, nil), nil
+	aad, err := metadata.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	return aead.Seal(nil, nonce, plainText, aad), nil
 }
 
-func decrypt(key []byte, ciphertext []byte) ([]byte, error) {
-	aead, err := chacha20poly1305.New(key)
+func decrypt(sharedSec, cipherText, nonce []byte, metadata encoding.BinaryMarshaler) ([]byte, error) {
+	aead, err := chacha20poly1305.New(sharedSec)
 	if err != nil {
 		return nil, err
 	}
-	return aead.Open(nil, UniversalNonce, ciphertext, nil)
+	aad, err := metadata.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	return aead.Open(nil, nonce, cipherText, aad)
 }

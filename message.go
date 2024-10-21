@@ -2,33 +2,99 @@ package delphi
 
 import (
 	"crypto/ecdh"
+	"errors"
+	"fmt"
 	"io"
+
+	"github.com/google/uuid"
+	stablemap "github.com/sean9999/go-stable-map"
+	"github.com/vmihailenco/msgpack/v5"
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
+const NonceSize = chacha20poly1305.NonceSize
+
+var ErrNotImplemented = errors.New("not implemented")
+
 type Message struct {
-	AAD        []byte
-	Headers    map[string]string
-	CipherText []byte
-	PlainText  []byte
+	To                 *ecdh.PublicKey
+	From               *ecdh.PublicKey
+	Metadata           *stablemap.StableMap[string, any] // additional authenticated data (AAD)
+	EphemeralPublicKey []byte
+	Nonce              []byte
+	CipherText         []byte
+	PlainText          []byte
+	Signature          []byte
 }
 
-// a valid Message may only have CipherText or PlainText.
-// Not neither, and not both.
-func (m Message) Valid() bool {
-	return (m.Encypted() && !m.Plain()) || (m.Plain() && !m.Encypted())
+func (m *Message) ensureNonce() []byte {
+	if m.Nonce == nil {
+		n := uuid.New()
+		b, _ := n.MarshalBinary()
+		m.Nonce = b
+	}
+	return m.Nonce
 }
 
-// returns true of CipherText is not null
-func (m Message) Encypted() bool {
-	return m.CipherText != nil && m.PlainText == nil
+func (m *Message) MarhsalBinary() ([]byte, error) {
+	return msgpack.Marshal(m)
 }
 
-// returns true of PlainText is not nil
-func (m Message) Plain() bool {
-	return m.CipherText == nil && m.PlainText != nil
+func (m *Message) UnmarshalBinary(p []byte) error {
+	return msgpack.Unmarshal(p, m)
 }
 
-// sign a message
-func (m Message) Sign(randomness io.Reader, me *ecdh.PrivateKey) (sig []byte, nonce []byte, err error) {
-	return nil, nil, ErrNotImplemented
+// type Encrypter interface {
+// 	Read(p []byte) (int, error)
+// 	Write(p []byte) (int, error)
+// }
+
+func (msg *Message) Encrypt(randomness io.Reader) error {
+	sharedSec, ephemeralPublicKey, err := generateSharedSecret(msg.To.Bytes(), randomness)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrEncryptionFailed, err)
+	}
+	msg.ensureNonce()
+	ciphTxt, err := encrypt(sharedSec, msg.PlainText, msg.Nonce, msg.Metadata)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrEncryptionFailed, err)
+	}
+	msg.EphemeralPublicKey = ephemeralPublicKey
+	msg.CipherText = ciphTxt
+	msg.PlainText = nil
+	return nil
+}
+
+func (msg *Message) Decrypt(recipientPrivKey *ecdh.PrivateKey) error {
+	sharedSec, err := extractSharedSecret(msg.EphemeralPublicKey, recipientPrivKey.Bytes(), msg.To.Bytes())
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrDecryptionFailed, err)
+	}
+	plain, err := decrypt(sharedSec, msg.CipherText, msg.Nonce, msg.Metadata)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrDecryptionFailed, err)
+	}
+	msg.PlainText = plain
+	msg.CipherText = nil
+	return nil
+}
+
+func NewMessage(plainTxt []byte) *Message {
+
+	msg := new(Message)
+
+	msg.Metadata = stablemap.New[string, any]()
+
+	nonce := uuid.New()
+	b, err := nonce.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
+
+	msg.PlainText = plainTxt
+
+	msg.Nonce = b
+
+	return msg
+
 }
