@@ -77,7 +77,7 @@ func (p principal) privateSigningKey() ed25519.PrivateKey {
 }
 
 func (p principal) privateEncryptionKey() *ecdh.PrivateKey {
-	b := p[:64]
+	b := p[:32]
 	priv, err := ecdh.X25519().NewPrivateKey(b)
 	if err != nil {
 		panic(err)

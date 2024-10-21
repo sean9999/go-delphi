@@ -7,10 +7,12 @@ import (
 
 func TestEncrypt(t *testing.T) {
 
-	alice := NewPrincipal(rand.Reader)
-	bob := NewPrincipal(rand.Reader)
+	randy := rand.Reader
 
-	msg := NewMessage([]byte("hello world"))
+	alice := NewPrincipal(randy)
+	bob := NewPrincipal(randy)
+
+	msg := NewMessage(randy, []byte("hello world"))
 
 	msg.From = alice.publicEncryptionKey()
 	msg.To = bob.publicEncryptionKey()

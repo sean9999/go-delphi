@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/google/uuid"
 	stablemap "github.com/sean9999/go-stable-map"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/crypto/chacha20poly1305"
@@ -27,12 +26,24 @@ type Message struct {
 	Signature          []byte
 }
 
-func (m *Message) ensureNonce() []byte {
-	if m.Nonce == nil {
-		n := uuid.New()
-		b, _ := n.MarshalBinary()
-		m.Nonce = b
+func (m *Message) ensureNonce(randy io.Reader) []byte {
+
+	if m.Nonce != nil {
+		return m.Nonce
 	}
+
+	nonce := make([]byte, NonceSize)
+	i, err := randy.Read(nonce)
+
+	if i != NonceSize {
+		panic("wrong length")
+	}
+	if err != nil {
+		panic("error reading from randy into nonce")
+	}
+
+	m.Nonce = nonce
+
 	return m.Nonce
 }
 
@@ -54,7 +65,7 @@ func (msg *Message) Encrypt(randomness io.Reader) error {
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrEncryptionFailed, err)
 	}
-	msg.ensureNonce()
+	msg.ensureNonce(randomness)
 	ciphTxt, err := encrypt(sharedSec, msg.PlainText, msg.Nonce, msg.Metadata)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrEncryptionFailed, err)
@@ -79,21 +90,15 @@ func (msg *Message) Decrypt(recipientPrivKey *ecdh.PrivateKey) error {
 	return nil
 }
 
-func NewMessage(plainTxt []byte) *Message {
+func NewMessage(randy io.Reader, plainTxt []byte) *Message {
 
 	msg := new(Message)
 
 	msg.Metadata = stablemap.New[string, any]()
 
-	nonce := uuid.New()
-	b, err := nonce.MarshalBinary()
-	if err != nil {
-		panic(err)
-	}
+	msg.ensureNonce(randy)
 
 	msg.PlainText = plainTxt
-
-	msg.Nonce = b
 
 	return msg
 
