@@ -109,11 +109,11 @@ func (msg *Message) Digest() ([]byte, error) {
 
 	sum := make([]byte, 0)
 	sum = append(sum, msg.From.Bytes()...)
-	// headers, err := msg.Metadata.MarshalBinary()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// sum = append(sum, headers...)
+	headers, err := msg.Metadata.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	sum = append(sum, headers...)
 
 	sum = append(sum, msg.Nonce[:]...)
 

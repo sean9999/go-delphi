@@ -161,8 +161,8 @@ func NewPrincipal(randy io.Reader) *principal {
 		panic("wrong length for signing private key")
 	}
 
-	p[0][1] = subKey(signPriv[:subKeySize])
-	p[1][1] = subKey(signPriv[subKeySize:])
+	p[0][1] = subKey(signPriv[subKeySize:])
+	p[1][1] = subKey(signPriv[:subKeySize])
 
 	return &p
 }
