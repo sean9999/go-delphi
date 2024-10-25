@@ -3,13 +3,10 @@ package delphi
 import (
 	"crypto/ecdh"
 	"crypto/ed25519"
-	"crypto/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-var randy = rand.Reader
 
 func TestNewPrincipal(t *testing.T) {
 

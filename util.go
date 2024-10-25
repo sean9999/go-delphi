@@ -13,6 +13,8 @@ import (
 
 const GLOBAL_SALT = "oracle/v1"
 
+var ErrDelphi = errors.New("delphi")
+
 var ErrNoEphemeralKey = errors.New("no ephemeral key")
 var ErrEncryptionFailed = errors.New("encryption failed")
 var ErrDecryptionFailed = errors.New("decryption failed")
@@ -102,3 +104,20 @@ func decrypt(sharedSec, cipherText, nonce []byte, metadata encoding.BinaryMarsha
 	}
 	return aead.Open(nil, nonce, cipherText, aad)
 }
+
+// func (pt *PlainText) Digest() ([]byte, error) {
+// 	if pt.EphemeralPublicKey == nil && pt.Nonce == nil {
+// 		return nil, errors.New("digest cannot be created because of lack of randomness")
+// 	}
+// 	bin := make([]byte, 0)
+// 	if pt.EphemeralPublicKey != nil {
+// 		bin = append(bin, pt.EphemeralPublicKey...)
+// 	}
+// 	bin = append(bin, pt.PlainTextData...)
+// 	if pt.Nonce != nil {
+// 		bin = append(bin, pt.Nonce...)
+// 	}
+// 	dig := sha256.New()
+// 	dig.Write(bin)
+// 	return dig.Sum(nil), nil
+// }
