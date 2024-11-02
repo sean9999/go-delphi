@@ -6,6 +6,7 @@ import (
 	"crypto/ed25519"
 	"encoding"
 	"errors"
+	"fmt"
 	"io"
 )
 
@@ -62,12 +63,56 @@ func (p *principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []b
 	return ed25519.Verify(edpub, digest, sig)
 }
 
-func (p *principal) Encrypt(msg []byte, recipient crypto.PublicKey, opts any) ([]byte, error) {
-	return nil, ErrNotImplemented
+var ErrBadKey = errors.New("bad key")
+
+func (p *principal) Encrypt(randy io.Reader, msg *Message, opts any) error {
+
+	if msg.Encrypted() {
+		return fmt.Errorf("%w: already encrypted", ErrDelphi)
+	}
+	if !msg.Plain() {
+		return fmt.Errorf("%w: there is no plain text to encrypt", ErrDelphi)
+	}
+
+	if msg.to.IsZero() {
+		return fmt.Errorf("%w: recipient: %w", ErrDelphi, ErrBadKey)
+	}
+
+	sec, eph, err := generateSharedSecret(msg.to.Encryption().Bytes(), randy)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrDelphi, err)
+	}
+
+	msg.ensureNonce(randy)
+	msg.ephPubkey = eph
+
+	ciph, err := encrypt(sec, msg.plainText, msg.nonce.Bytes(), msg.headers)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrDelphi, err)
+	}
+
+	msg.cipherText = ciph
+	msg.plainText = nil
+
+	// sec, err := extractSharedSecret(msg.EphemeralKey(), p.privateEncryptionKey().Bytes(), msg.Recipient().Bytes())
+	// if err != nil {
+	// 	return err
+	// }
+
+	return nil
 }
 
-func (p *principal) Decrypt(rand io.Reader, msg []byte, opts crypto.DecrypterOpts) ([]byte, error) {
-	return nil, ErrNotImplemented
+func (p *principal) Decrypt(_ io.Reader, msg *Message, opts crypto.DecrypterOpts) ([]byte, error) {
+
+	sharedSec, err := extractSharedSecret(msg.ephPubkey, p.privateEncryptionKey().Bytes(), p.publicEncryptionKey().Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("could not decrypt: %w", err)
+	}
+	plainTxt, err := decrypt(sharedSec, msg.cipherText, msg.nonce[:], msg.headers)
+	if err != nil {
+		return nil, fmt.Errorf("could not decrypt: %w", err)
+	}
+	return plainTxt, nil
 }
 
 // func (p principal) byteRange(from, to int) []byte {
@@ -94,9 +139,17 @@ func (p *principal) publicEncryptionKey() *ecdh.PublicKey {
 	return p.privateEncryptionKey().PublicKey()
 }
 
+func (p *principal) PublicKey() key {
+	return p[0]
+}
+
+func (p *principal) privateKey() key {
+	return p[1]
+}
+
 func (p *principal) Public() crypto.PublicKey {
 	//	i guess the signing key is most appropriate here?
-	return p.publicSigningKey()
+	return p[0]
 }
 
 func (p *principal) Equal(p2 crypto.PublicKey) bool {
@@ -125,45 +178,15 @@ func NewPrincipal(randy io.Reader) *principal {
 	 *	2nd 32 bytes:	public	signing	key
 	 *	3rd 32 bytes:	private encryption key
 	 *	4th 32 bytes:	private signing key
+	 * Therefore:
+	 * principal[0][0] = public encryption
+	 * principal[0][1] = public signing
+	 * principal[1][0] = private encryption
+	 * principal[1][1] = private signing
 	 **/
 
-	var p principal
-
-	ed := ecdh.X25519()
-	//	first 32 bytes
-	encryptionPriv, err := ed.GenerateKey(randy)
-	if err != nil {
-		panic(err)
-	}
-	//	second 32 bytes
-	encryptionPub := encryptionPriv.PublicKey()
-
-	if len(encryptionPriv.Bytes()) != 32 {
-		panic("encyption private key wrong length")
-	}
-	if len(encryptionPub.Bytes()) != 32 {
-		panic("encyption public key wrong length")
-	}
-
-	p[0][0] = subKey(encryptionPub.Bytes())
-	p[1][0] = subKey(encryptionPriv.Bytes())
-
-	// copy(p[:32], encryptionPriv.Bytes())
-	// copy(p[32:64], encryptionPub.Bytes())
-
-	//	priv is 64 bytes and contains the public key
-	_, signPriv, err := ed25519.GenerateKey(randy)
-	if err != nil {
-		panic(err)
-	}
-
-	if len(signPriv) != 64 {
-		panic("wrong length for signing private key")
-	}
-
-	p[0][1] = subKey(signPriv[subKeySize:])
-	p[1][1] = subKey(signPriv[:subKeySize])
-
+	kp := NewKeyPair(randy)
+	p := principal(kp)
 	return &p
 }
 

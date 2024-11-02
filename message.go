@@ -3,9 +3,11 @@ package delphi
 import (
 	"crypto"
 	"crypto/ecdh"
+	"crypto/ed25519"
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 
 	stablemap "github.com/sean9999/go-stable-map"
@@ -15,20 +17,53 @@ import (
 var ErrNotImplemented = errors.New("not implemented")
 
 type Message struct {
-	To                 key
-	From               key
-	Metadata           *stablemap.StableMap[string, any] // additional authenticated data (AAD)
-	EphemeralPublicKey []byte
-	Nonce              Nonce
-	CipherText         []byte
-	PlainText          []byte
-	Signature          []byte
+	to         key                                  `msgpack:"to"`
+	from       key                                  `msgpack:"from"`
+	headers    *stablemap.StableMap[string, []byte] `msgpack:"hdrs"` // additional authenticated data (AAD)
+	ephPubkey  []byte                               `msgpack:"ephkey"`
+	nonce      Nonce                                `msgpack:"nonce"`
+	cipherText []byte                               `msgpack:"ctxt"`
+	plainText  []byte                               `msgpack:"ptxt"`
+	signature  []byte                               `msgpack:"sig"`
+}
+
+func (m *Message) To() crypto.PublicKey {
+	k, err := ecdh.X25519().NewPublicKey(m.to.Encryption().Bytes())
+	if err != nil {
+		panic(err)
+	}
+	return k
+}
+
+func (m *Message) From() crypto.PublicKey {
+	k, err := ecdh.X25519().NewPublicKey(m.from.Encryption().Bytes())
+	if err != nil {
+		panic(err)
+	}
+	return k
+}
+
+func (m *Message) Ephemeral() crypto.PublicKey {
+	return ed25519.PublicKey(m.ephPubkey)
+}
+
+func (m *Message) Signatory() crypto.PublicKey {
+
+	k, err := ecdh.X25519().NewPublicKey(m.from.Signing().Bytes())
+	if err != nil {
+		panic(err)
+	}
+	return k
+}
+
+func (m *Message) Signature() []byte {
+	return m.signature
 }
 
 func (m *Message) ensureNonce(randy io.Reader) Nonce {
 
-	if !m.Nonce.IsZero() {
-		return m.Nonce
+	if !m.nonce.IsZero() {
+		return m.nonce
 	}
 
 	nonce := Nonce{}
@@ -41,12 +76,12 @@ func (m *Message) ensureNonce(randy io.Reader) Nonce {
 		panic("error reading from randy into nonce")
 	}
 
-	m.Nonce = nonce
+	m.nonce = nonce
 
-	return m.Nonce
+	return m.nonce
 }
 
-func (m *Message) MarhsalBinary() ([]byte, error) {
+func (m *Message) MarshalBinary() ([]byte, error) {
 	return msgpack.Marshal(m)
 }
 
@@ -54,82 +89,63 @@ func (m *Message) UnmarshalBinary(p []byte) error {
 	return msgpack.Unmarshal(p, m)
 }
 
-// type Encrypter interface {
-// 	Read(p []byte) (int, error)
-// 	Write(p []byte) (int, error)
-// }
-
-func (msg *Message) Encrypt(randomness io.Reader) error {
-	sharedSec, ephemeralPublicKey, err := generateSharedSecret(msg.To.Bytes(), randomness)
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrEncryptionFailed, err)
-	}
-	msg.ensureNonce(randomness)
-	ciphTxt, err := encrypt(sharedSec, msg.PlainText, msg.Nonce[:], msg.Metadata)
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrEncryptionFailed, err)
-	}
-	msg.EphemeralPublicKey = ephemeralPublicKey
-	msg.CipherText = ciphTxt
-	msg.PlainText = nil
-	return nil
+func (msg *Message) Plain() bool {
+	return len(msg.plainText) > 0
 }
 
-func (msg *Message) IsPlain() bool {
-	return len(msg.PlainText) > 0
+func (msg *Message) Encrypted() bool {
+	return len(msg.cipherText) > 0
 }
 
-func (msg *Message) IsEncrypted() bool {
-	return len(msg.CipherText) > 0
+func (msg *Message) Valid() bool {
+	//	TODO: other requirements surely should be
+	return (msg.Plain() && !msg.Encrypted()) || (msg.Encrypted() && !msg.Plain())
 }
 
-func (msg *Message) IsValid() bool {
-	return (msg.IsPlain() && !msg.IsEncrypted()) || (msg.IsEncrypted() && !msg.IsPlain())
-}
-
-func (msg *Message) Digest() ([]byte, error) {
+func (msg *Message) Digest(hash hash.Hash) ([]byte, error) {
 
 	//	Some fields are included. Some are required. Some are intentially omitted:
 	//	To is omitted. A messages digest is the same regardless of who it's sent to.
 	//	From is required. Who its from is integral.
-	//	Metadata is included if it exists, but not if not. It's treated as AAD.
+	//	Headers are included if they exists, but not if not. It's treated as AAD.
 	//	Nonce is required, to ensure uniqueness
 	//	Ephemeral Key is omitted. Nonce provides all necessary randomness
 	//	Either plain or cipher text is included. It's an error to have both or neither.
 
-	if !msg.IsValid() {
+	if !msg.Valid() {
 		return nil, errors.New("message is not valid")
 	}
-	if msg.Nonce.IsZero() {
+	if msg.nonce.IsZero() {
 		return nil, errors.New("nonce is zero")
 	}
-	if msg.From.IsZero() {
+	if msg.from.IsZero() {
 		return nil, errors.New("From is zero")
 	}
 
 	sum := make([]byte, 0)
-	sum = append(sum, msg.From.Bytes()...)
-	headers, err := msg.Metadata.MarshalBinary()
+	sum = append(sum, msg.from.Bytes()...)
+	headers, err := msg.headers.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
 	sum = append(sum, headers...)
+	sum = append(sum, msg.nonce[:]...)
 
-	sum = append(sum, msg.Nonce[:]...)
-
-	if msg.IsEncrypted() {
-		sum = append(sum, msg.CipherText...)
+	if msg.Encrypted() {
+		sum = append(sum, msg.cipherText...)
 	} else {
-		sum = append(sum, msg.PlainText...)
+		sum = append(sum, msg.plainText...)
 	}
 
-	dig := sha256.New()
-	return dig.Sum(sum), nil
+	//dig := sha256.New()
+	//return dig.Sum(sum), nil
+	return hash.Sum(sum), nil
 }
 
+// msg.Sign(Signer) is another way of doing signer.Sign(*Message)
 func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
 	var errSign = errors.New("could not sign message")
-	digest, err := msg.Digest()
+	digest, err := msg.Digest(sha256.New())
 	if err != nil {
 		return fmt.Errorf("%w: %w", errSign, err)
 	}
@@ -137,34 +153,21 @@ func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
 	if err != nil {
 		return fmt.Errorf("%w: %w", errSign, err)
 	}
-	msg.Signature = sig
+	msg.signature = sig
 	return nil
 }
 
-// func (msg *Message) Sign(randomness io.Reader, signer crypto.Signer) error {
-// 	signer.Sign(rand io.Reader, digest []byte, opts crypto.SignerOpts)
-// }
-
-func (msg *Message) Decrypt(recipientPrivKey *ecdh.PrivateKey) error {
-	sharedSec, err := extractSharedSecret(msg.EphemeralPublicKey, recipientPrivKey.Bytes(), msg.To.Bytes())
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrDecryptionFailed, err)
-	}
-	plain, err := decrypt(sharedSec, msg.CipherText, msg.Nonce[:], msg.Metadata)
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrDecryptionFailed, err)
-	}
-	msg.PlainText = plain
-	msg.CipherText = nil
-	return nil
+// msg.Encrypt(Encrypter) is another way of doing encrypter.Encrypt(*Message)
+func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, opts EncrypterOpts) error {
+	return encrypter.Encrypt(randy, msg, opts)
 }
 
 func NewMessage(randy io.Reader, plainTxt []byte) *Message {
 
 	msg := new(Message)
-	msg.Metadata = stablemap.New[string, any]()
+	msg.headers = stablemap.New[string, []byte]()
 	msg.ensureNonce(randy)
-	msg.PlainText = plainTxt
+	msg.plainText = plainTxt
 
 	return msg
 
