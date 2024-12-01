@@ -2,6 +2,7 @@ REPO=github.com/sean9999/go-delphi
 SEMVER := $$(git tag --sort=-version:refname | head -n 1)
 BRANCH := $$(git branch --show-current)
 REF := $$(git describe --dirty --tags --always)
+GOPROXY=proxy.golang.org
 
 info:
 	@printf "REPO:\t%s\nSEMVER:\t%s\nBRANCH:\t%s\nREF:\t%s\n" $(REPO) $(SEMVER) $(BRANCH) $(REF)
@@ -22,7 +23,7 @@ docs: pkgsite
 	pkgsite -open .
 
 publish:
-	GOPROXY=https://goproxy.io,direct go list -m ${REPO}@${SEMVER}
+	GOPROXY=https://${GOPROXY},direct go list -m ${REPO}@${SEMVER}
 
 test:
 	git restore testdata
