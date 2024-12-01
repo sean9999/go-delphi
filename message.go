@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"hash"
 	"io"
 
 	stablemap "github.com/sean9999/go-stable-map"
@@ -17,18 +16,18 @@ import (
 var ErrNotImplemented = errors.New("not implemented")
 
 type Message struct {
-	to         key                                  `msgpack:"to"`
-	from       key                                  `msgpack:"from"`
-	headers    *stablemap.StableMap[string, []byte] `msgpack:"hdrs"` // additional authenticated data (AAD)
+	Recipient  Key                                  `msgpack:"to"`
+	Sender     Key                                  `msgpack:"from"`
+	Headers    *stablemap.StableMap[string, []byte] `msgpack:"hdrs"` // additional authenticated data (AAD)
 	ephPubkey  []byte                               `msgpack:"ephkey"`
 	nonce      Nonce                                `msgpack:"nonce"`
 	cipherText []byte                               `msgpack:"ctxt"`
-	plainText  []byte                               `msgpack:"ptxt"`
+	PlainText  []byte                               `msgpack:"ptxt"`
 	signature  []byte                               `msgpack:"sig"`
 }
 
 func (m *Message) To() crypto.PublicKey {
-	k, err := ecdh.X25519().NewPublicKey(m.to.Encryption().Bytes())
+	k, err := ecdh.X25519().NewPublicKey(m.Recipient.Encryption().Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -36,7 +35,7 @@ func (m *Message) To() crypto.PublicKey {
 }
 
 func (m *Message) From() crypto.PublicKey {
-	k, err := ecdh.X25519().NewPublicKey(m.from.Encryption().Bytes())
+	k, err := ecdh.X25519().NewPublicKey(m.Sender.Encryption().Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +48,7 @@ func (m *Message) Ephemeral() crypto.PublicKey {
 
 func (m *Message) Signatory() crypto.PublicKey {
 
-	k, err := ecdh.X25519().NewPublicKey(m.from.Signing().Bytes())
+	k, err := ecdh.X25519().NewPublicKey(m.Sender.Signing().Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +89,7 @@ func (m *Message) UnmarshalBinary(p []byte) error {
 }
 
 func (msg *Message) Plain() bool {
-	return len(msg.plainText) > 0
+	return len(msg.PlainText) > 0
 }
 
 func (msg *Message) Encrypted() bool {
@@ -102,7 +101,7 @@ func (msg *Message) Valid() bool {
 	return (msg.Plain() && !msg.Encrypted()) || (msg.Encrypted() && !msg.Plain())
 }
 
-func (msg *Message) Digest(hash hash.Hash) ([]byte, error) {
+func (msg *Message) Digest() ([]byte, error) {
 
 	//	Some fields are included. Some are required. Some are intentially omitted:
 	//	To is omitted. A messages digest is the same regardless of who it's sent to.
@@ -112,19 +111,21 @@ func (msg *Message) Digest(hash hash.Hash) ([]byte, error) {
 	//	Ephemeral Key is omitted. Nonce provides all necessary randomness
 	//	Either plain or cipher text is included. It's an error to have both or neither.
 
+	hash := sha256.New()
+
 	if !msg.Valid() {
 		return nil, errors.New("message is not valid")
 	}
 	if msg.nonce.IsZero() {
 		return nil, errors.New("nonce is zero")
 	}
-	if msg.from.IsZero() {
+	if msg.Sender.IsZero() {
 		return nil, errors.New("From is zero")
 	}
 
 	sum := make([]byte, 0)
-	sum = append(sum, msg.from.Bytes()...)
-	headers, err := msg.headers.MarshalBinary()
+	sum = append(sum, msg.Sender.Bytes()...)
+	headers, err := msg.Headers.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (msg *Message) Digest(hash hash.Hash) ([]byte, error) {
 	if msg.Encrypted() {
 		sum = append(sum, msg.cipherText...)
 	} else {
-		sum = append(sum, msg.plainText...)
+		sum = append(sum, msg.PlainText...)
 	}
 
 	//dig := sha256.New()
@@ -145,7 +146,8 @@ func (msg *Message) Digest(hash hash.Hash) ([]byte, error) {
 // msg.Sign(Signer) is another way of doing signer.Sign(*Message)
 func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
 	var errSign = errors.New("could not sign message")
-	digest, err := msg.Digest(sha256.New())
+	msg.ensureNonce(randy)
+	digest, err := msg.Digest()
 	if err != nil {
 		return fmt.Errorf("%w: %w", errSign, err)
 	}
@@ -165,9 +167,9 @@ func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, opts Encrypter
 func NewMessage(randy io.Reader, plainTxt []byte) *Message {
 
 	msg := new(Message)
-	msg.headers = stablemap.New[string, []byte]()
+	msg.Headers = stablemap.New[string, []byte]()
 	msg.ensureNonce(randy)
-	msg.plainText = plainTxt
+	msg.PlainText = plainTxt
 
 	return msg
 

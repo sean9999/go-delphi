@@ -3,7 +3,9 @@ package delphi
 import (
 	"crypto/ecdh"
 	"crypto/ed25519"
+	"encoding/hex"
 	"io"
+	"slices"
 )
 
 const subKeySize = 32
@@ -24,17 +26,28 @@ func (s subKey) Bytes() []byte {
 	return s[:]
 }
 
-// a key is two (specifically one encryption and one signing) subKeys
-type key [2]subKey
+// a Key is two (specifically one encryption and one signing) subKeys
+type Key [2]subKey
 
-func (k key) IsZero() bool {
+func (k Key) IsZero() bool {
 	return k[0].IsZero() && k[1].IsZero()
 }
 
-// a keyPair is two keys. One public, one private
-type keyPair [2]key
+func (k Key) From(b []byte) Key {
+	var enc subKey
+	var sig subKey
+	copy(enc[:], b[:subKeySize])
+	copy(sig[:], b[subKeySize:])
+	var j Key
+	j[0] = enc
+	j[1] = sig
+	return j
+}
 
-func (kp keyPair) IsZero() bool {
+// a KeyPair is two keys. One public, one private
+type KeyPair [2]Key
+
+func (kp KeyPair) IsZero() bool {
 	return kp[0].IsZero() && kp[1].IsZero()
 }
 
@@ -46,33 +59,50 @@ func (kp keyPair) IsZero() bool {
  *	4th 32 bytes:	private signing key
  **/
 
-func (k key) Bytes() []byte {
+func (k Key) Bytes() []byte {
 	b := make([]byte, 2*subKeySize)
 	copy(b[:subKeySize], k[0][:])
 	copy(b[subKeySize:], k[1][:])
 	return b
 }
 
-func (k key) Signing() subKey {
+func (k Key) Equal(j Key) bool {
+	for i := range 2 {
+		if !slices.Equal(k[i][:], j[i][:]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (k Key) Signing() subKey {
 	return k[1]
 }
 
-func (k key) Encryption() subKey {
+func (k Key) Encryption() subKey {
 	return k[0]
 }
 
-func (k keyPair) Bytes() []byte {
+func (k KeyPair) Bytes() []byte {
 	b := make([]byte, 4*subKeySize)
 	copy(b[:2*subKeySize], k[0].Bytes()) // public
 	copy(b[2*subKeySize:], k[1].Bytes()) // private
 	return b
 }
 
-func KeyFromBytes(b []byte) key {
+func KeyFromHex(str string) Key {
+	bin, err := hex.DecodeString(str)
+	if err != nil {
+		return Key{}
+	}
+	return KeyFromBytes(bin)
+}
+
+func KeyFromBytes(b []byte) Key {
 	if len(b) != subKeySize {
 		panic("wrong length for key")
 	}
-	k := key{}
+	k := Key{}
 	copy(k[0][:], b[:subKeySize])
 	copy(k[1][:], b[subKeySize:])
 	return k
@@ -84,11 +114,11 @@ func NewSubKey(randy io.Reader) subKey {
 	return sk
 }
 
-func NewKey(randy io.Reader) key {
-	return key{NewSubKey(randy), NewSubKey(randy)}
+func NewKey(randy io.Reader) Key {
+	return Key{NewSubKey(randy), NewSubKey(randy)}
 }
 
-func NewKeyPair(randy io.Reader) keyPair {
+func NewKeyPair(randy io.Reader) KeyPair {
 
 	/**
 	 * Layout:
@@ -98,7 +128,7 @@ func NewKeyPair(randy io.Reader) keyPair {
 	 *	4th 32 bytes:	private signing key
 	 **/
 
-	var kp keyPair
+	var kp KeyPair
 
 	//	encryption keys
 	ed := ecdh.X25519()

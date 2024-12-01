@@ -2,7 +2,6 @@ package delphi
 
 import (
 	"crypto"
-	"crypto/ed25519"
 	"io"
 )
 
@@ -13,11 +12,12 @@ type Encrypter interface {
 }
 
 type Decrypter interface {
-	Decrypt(*Message, ed25519.PrivateKey, crypto.DecrypterOpts) error
+	Decrypt(*Message, crypto.DecrypterOpts) error
 }
 
 // a Cipherer can encrypt and decrypt a [message]
 type Cipherer interface {
 	crypto.PrivateKey
 	Encrypter
+	Decrypter
 }

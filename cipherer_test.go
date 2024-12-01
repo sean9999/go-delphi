@@ -20,7 +20,7 @@ func (m *MockCipherer) Encrypt(r io.Reader, msg *Message, opts EncrypterOpts) er
 
 func (m *MockCipherer) Decrypt(msg *Message, priv ed25519.PrivateKey, opts crypto.DecrypterOpts) error {
 	// Mock decryption logic
-	msg.plainText = []byte("decrypted")
+	msg.PlainText = []byte("decrypted")
 	return nil
 }
 
@@ -45,5 +45,5 @@ func TestCipherer_Decrypt(t *testing.T) {
 	priv := ed25519.NewKeyFromSeed(make([]byte, ed25519.SeedSize))
 	err := cipherer.Decrypt(msg, priv, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, []byte("decrypted"), msg.plainText)
+	assert.Equal(t, []byte("decrypted"), msg.PlainText)
 }

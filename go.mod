@@ -3,7 +3,6 @@ module github.com/sean9999/go-delphi
 go 1.23.2
 
 require (
-	github.com/google/uuid v1.6.0
 	github.com/sean9999/go-stable-map v0.0.1
 	github.com/stretchr/testify v1.9.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1

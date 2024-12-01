@@ -86,9 +86,12 @@ func encrypt(sharedSec, plainText, nonce []byte, metadata encoding.BinaryMarshal
 	if err != nil {
 		return nil, err
 	}
-	aad, err := metadata.MarshalBinary()
-	if err != nil {
-		return nil, err
+	var aad []byte
+	if metadata != nil {
+		aad, err = metadata.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return aead.Seal(nil, nonce, plainText, aad), nil
 }
