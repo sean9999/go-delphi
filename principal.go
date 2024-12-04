@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"crypto/ecdh"
 	"crypto/ed25519"
-	"encoding"
 	"errors"
 	"fmt"
 	"io"
@@ -12,61 +11,31 @@ import (
 
 const ByteSize = 128
 
+var ErrBadKey = errors.New("bad key")
+
 type CryptOpts struct {
 	Nonce []byte
 	AAED  []byte
 }
 
-// principal implements Principal
-var _ IPrincipal = (*Principal)(nil)
-
-// a IPrincipal is a holder of a public/private key-pair
-// that can perform encryption, decryption, signing, and verifying operations.
-type IPrincipal interface {
-	Cipherer
-	Certifier
-	encoding.BinaryMarshaler
-	encoding.BinaryUnmarshaler
-	PublicKey() Key
-	PrivateKey() Key
-}
-
-/**
- * Layout:
- *	1st 32 bytes:	public	encrpytion key
- *	2nd 32 bytes:	public	signing	key
- *	3rd 32 bytes:	private encryption key
- *	4th 32 bytes:	private signing key
- **/
+// a Principal contains cryptographic key material
+// and can sign, verify, encrypt, and decrypt [Message]s.
 type Principal = KeyPair
 
-// type notary [64]byte
-
-// func (p principal) MarshalBinary() ([]byte, error) {
-// 	return p[:], nil
-// }
-
-// func (p principal) UnmarshalBinary(b []byte) error {
-// 	if len(b) != ByteSize {
-// 		return errors.New("wrong length")
-// 	}
-// 	copy(p[:], b)
-// 	return nil
-// }
-
+// Sign() signs a digest
 func (p *Principal) Sign(_ io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error) {
 	sig := ed25519.Sign(p.privateSigningKey(), digest)
 	return sig, nil
 }
 
+// Verify() verifies a signature
 func (p *Principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []byte) bool {
 	dpub := delphiPubKey.(Key)
 	edpub := ed25519.PublicKey(dpub[1][:])
 	return ed25519.Verify(edpub, digest, sig)
 }
 
-var ErrBadKey = errors.New("bad key")
-
+// Encrypt() encrypts a [Message]
 func (p *Principal) Encrypt(randy io.Reader, msg *Message, opts any) error {
 
 	if msg.Encrypted() {
@@ -96,14 +65,10 @@ func (p *Principal) Encrypt(randy io.Reader, msg *Message, opts any) error {
 	msg.cipherText = ciph
 	msg.PlainText = nil
 
-	// sec, err := extractSharedSecret(msg.EphemeralKey(), p.privateEncryptionKey().Bytes(), msg.Recipient().Bytes())
-	// if err != nil {
-	// 	return err
-	// }
-
 	return nil
 }
 
+// Decrypt() decrypts a [Message]
 func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 
 	sharedSec, err := extractSharedSecret(msg.ephPubkey, p.privateEncryptionKey().Bytes(), p.publicEncryptionKey().Bytes())
@@ -152,7 +117,6 @@ func (p *Principal) PrivateKey() Key {
 }
 
 func (p *Principal) Public() crypto.PublicKey {
-	//	i guess the signing key is most appropriate here?
 	return p[0]
 }
 
@@ -174,26 +138,14 @@ func (p *Principal) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
+// NewPrincipal() creates a new [Principal]
 func NewPrincipal(randy io.Reader) *Principal {
-
-	/**
-	 * Layout:
-	 *	1st 32 bytes:	public	encrpytion key
-	 *	2nd 32 bytes:	public	signing	key
-	 *	3rd 32 bytes:	private encryption key
-	 *	4th 32 bytes:	private signing key
-	 * Therefore:
-	 * principal[0][0] = public encryption
-	 * principal[0][1] = public signing
-	 * principal[1][0] = private encryption
-	 * principal[1][1] = private signing
-	 **/
-
 	kp := NewKeyPair(randy)
 	p := Principal(kp)
 	return &p
 }
 
+// From() re-hydrates a [Principal] from a byte slice
 func (Principal) From(b []byte) Principal {
 
 	if len(b) < 4*subKeySize {

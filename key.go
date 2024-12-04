@@ -10,9 +10,10 @@ import (
 
 const subKeySize = 32
 
-// a subkey is either: a public encryption, public signing, private encryption, or private signing key
+// a subKey is either: a public encryption, public signing, private encryption, or private signing key
 type subKey [subKeySize]byte
 
+// a subKey is zero if all it's bytes are zero
 func (s subKey) IsZero() bool {
 	for _, b := range s {
 		if b != 0 {
@@ -29,6 +30,7 @@ func (s subKey) Bytes() []byte {
 // a Key is two (specifically one encryption and one signing) subKeys
 type Key [2]subKey
 
+// a Key is zero if all it's subKeys are zero
 func (k Key) IsZero() bool {
 	return k[0].IsZero() && k[1].IsZero()
 }
@@ -44,20 +46,13 @@ func (k Key) From(b []byte) Key {
 	return j
 }
 
-// a KeyPair is two keys. One public, one private
+// a KeyPair is two [Key]s. One public, one private
 type KeyPair [2]Key
 
+// a KeyPair is zero if all it's keys are zero
 func (kp KeyPair) IsZero() bool {
 	return kp[0].IsZero() && kp[1].IsZero()
 }
-
-/**
- * Layout:
- *	1st 32 bytes:	public	encrpytion key
- *	2nd 32 bytes:	public	signing	key
- *	3rd 32 bytes:	private encryption key
- *	4th 32 bytes:	private signing key
- **/
 
 func (k Key) Bytes() []byte {
 	b := make([]byte, 2*subKeySize)
@@ -118,6 +113,7 @@ func NewKey(randy io.Reader) Key {
 	return Key{NewSubKey(randy), NewSubKey(randy)}
 }
 
+// NewKeyPair generates valid ed25519 and X25519 keys
 func NewKeyPair(randy io.Reader) KeyPair {
 
 	/**

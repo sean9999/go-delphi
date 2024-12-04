@@ -24,10 +24,8 @@ func TestEncrypt(t *testing.T) {
 
 	err := msg.Encrypt(randy, alice, nil)
 	assert.NoError(t, err)
-
 	err = bob.Decrypt(msg, nil)
 	assert.NoError(t, err)
-
 	assert.Equal(t, sentence, msg.PlainText)
 
 }
@@ -35,7 +33,6 @@ func TestEncrypt(t *testing.T) {
 func TestEncrypt_No_Recipient(t *testing.T) {
 
 	sentence := []byte("hello world")
-
 	alice := NewPrincipal(randy)
 	//bob := NewPrincipal(randy)
 	msg := NewMessage(randy, sentence)

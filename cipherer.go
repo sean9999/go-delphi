@@ -15,7 +15,7 @@ type Decrypter interface {
 	Decrypt(*Message, crypto.DecrypterOpts) error
 }
 
-// a Cipherer can encrypt and decrypt a [message]
+// a Cipherer can encrypt and decrypt a [Message]
 type Cipherer interface {
 	crypto.PrivateKey
 	Encrypter

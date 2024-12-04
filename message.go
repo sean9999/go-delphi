@@ -15,6 +15,8 @@ import (
 
 var ErrNotImplemented = errors.New("not implemented")
 
+// a Message is a message that represents either plain text or cipher text,
+// encapsulating all data and metadata necessary to perform cryptographic operations.
 type Message struct {
 	Recipient  Key                                  `msgpack:"to"`
 	Sender     Key                                  `msgpack:"from"`
@@ -26,6 +28,7 @@ type Message struct {
 	signature  []byte                               `msgpack:"sig"`
 }
 
+// To() returns the recipient as a public encryption key
 func (m *Message) To() crypto.PublicKey {
 	k, err := ecdh.X25519().NewPublicKey(m.Recipient.Encryption().Bytes())
 	if err != nil {
@@ -34,6 +37,7 @@ func (m *Message) To() crypto.PublicKey {
 	return k
 }
 
+// From() returns the sender as a public encryption key
 func (m *Message) From() crypto.PublicKey {
 	k, err := ecdh.X25519().NewPublicKey(m.Sender.Encryption().Bytes())
 	if err != nil {
@@ -42,10 +46,12 @@ func (m *Message) From() crypto.PublicKey {
 	return k
 }
 
+// Ephemeral() returns the value of the ephemeral X25519 key attached to an encrypted Message
 func (m *Message) Ephemeral() crypto.PublicKey {
 	return ed25519.PublicKey(m.ephPubkey)
 }
 
+// Signatory() returns the public signing key of the sender
 func (m *Message) Signatory() crypto.PublicKey {
 
 	k, err := ecdh.X25519().NewPublicKey(m.Sender.Signing().Bytes())
@@ -59,24 +65,20 @@ func (m *Message) Signature() []byte {
 	return m.signature
 }
 
+// ensureNonce ensures the Message has a [Nonce]
 func (m *Message) ensureNonce(randy io.Reader) Nonce {
-
 	if !m.nonce.IsZero() {
 		return m.nonce
 	}
-
 	nonce := Nonce{}
 	i, err := randy.Read(nonce[:])
-
 	if i != NonceSize {
 		panic("wrong length")
 	}
 	if err != nil {
 		panic("error reading from randy into nonce")
 	}
-
 	m.nonce = nonce
-
 	return m.nonce
 }
 
@@ -101,12 +103,13 @@ func (msg *Message) Valid() bool {
 	return (msg.Plain() && !msg.Encrypted()) || (msg.Encrypted() && !msg.Plain())
 }
 
+// Digest() returns that portion of a Message which should be hashed and signed
 func (msg *Message) Digest() ([]byte, error) {
 
 	//	Some fields are included. Some are required. Some are intentially omitted:
 	//	To is omitted. A messages digest is the same regardless of who it's sent to.
 	//	From is required. Who its from is integral.
-	//	Headers are included if they exists, but not if not. It's treated as AAD.
+	//	Headers are included if they exists, but not if not. They are treated as AAD.
 	//	Nonce is required, to ensure uniqueness
 	//	Ephemeral Key is omitted. Nonce provides all necessary randomness
 	//	Either plain or cipher text is included. It's an error to have both or neither.
@@ -138,8 +141,6 @@ func (msg *Message) Digest() ([]byte, error) {
 		sum = append(sum, msg.PlainText...)
 	}
 
-	//dig := sha256.New()
-	//return dig.Sum(sum), nil
 	return hash.Sum(sum), nil
 }
 
@@ -164,13 +165,11 @@ func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, opts Encrypter
 	return encrypter.Encrypt(randy, msg, opts)
 }
 
+// NewMessage() creates a new Message
 func NewMessage(randy io.Reader, plainTxt []byte) *Message {
-
 	msg := new(Message)
 	msg.Headers = stablemap.New[string, []byte]()
 	msg.ensureNonce(randy)
 	msg.PlainText = plainTxt
-
 	return msg
-
 }

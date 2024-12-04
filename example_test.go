@@ -1,19 +1,5 @@
-# Go Delphi
+package delphi_test
 
-Delphi is a package that provides secure, efficient cryptographic operations with a few nice features:
-
-- perfect forward secrecy is provided using X25519 key exchange and ephemeral keys
-- all keys are the same length (public, private, encryption, decryption) (32 bytes)
-- ed25519 for signatures and verification
-- a nice sensible API
-
-# Getting Started
-
-```sh
-$ go get github.com/sean9999/go-delphi@latest
-```
-
-```go
 import (
 	"crypto/rand"
 	"testing"
@@ -57,5 +43,3 @@ func TestExample(t *testing.T) {
 	assert.Equal(t, []byte("bar"), foo)
 
 }
-
-```

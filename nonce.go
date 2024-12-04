@@ -8,6 +8,7 @@ import (
 
 const NonceSize = chacha20poly1305.NonceSize
 
+// A Nonce is a random value with a reasonably high chance of being globally unqiue.
 type Nonce [NonceSize]byte
 
 func (nonce Nonce) IsZero() bool {
