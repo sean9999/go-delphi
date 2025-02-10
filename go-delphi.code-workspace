@@ -1,11 +1,13 @@
 {
 	"folders": [
-		{
+    {
+      "name": "Delphi",
 			"path": "."
 		},
-        {
-            "path": "../go-stable-map"
-        }
+    {
+      "name": "Pear",
+      "path": "../pear"
+    }
 	],
 	"settings": {
 		"workbench.colorCustomizations": {

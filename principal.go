@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
+	"github.com/sean9999/pear"
 )
 
 const ByteSize = 128
@@ -23,15 +25,16 @@ type CryptOpts struct {
 type Principal = KeyPair
 
 // Sign() signs a digest
-func (p *Principal) Sign(_ io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error) {
+func (p *Principal) Sign(_ io.Reader, digest []byte, _ crypto.SignerOpts) ([]byte, error) {
 	sig := ed25519.Sign(p.privateSigningKey(), digest)
 	return sig, nil
 }
 
 // Verify() verifies a signature
 func (p *Principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []byte) bool {
-	dpub := delphiPubKey.(Key)
-	edpub := ed25519.PublicKey(dpub[1][:])
+	//dpub := delphiPubKey.(Key)
+	//edpub := ed25519.PublicKey(dpub[1][:])
+	edpub := ed25519.PublicKey(delphiPubKey.(Key).Signing().Bytes())
 	return ed25519.Verify(edpub, digest, sig)
 }
 
@@ -130,8 +133,9 @@ func (p *Principal) MarshalBinary() ([]byte, error) {
 }
 
 func (p *Principal) UnmarshalBinary(b []byte) error {
+
 	if len(b) != 4*subKeySize {
-		return errors.New("wrong byte slice size")
+		return pear.Errorf("wrong byte slice size. wanted %d but got %d", 4*subKeySize, len(b))
 	}
 	p[0] = KeyFromBytes(b[:2*subKeySize])
 	p[1] = KeyFromBytes(b[2*subKeySize:])
@@ -146,15 +150,14 @@ func NewPrincipal(randy io.Reader) *Principal {
 }
 
 // From() re-hydrates a [Principal] from a byte slice
-func (Principal) From(b []byte) Principal {
-
+func (Principal) From(b []byte) (Principal, error) {
 	if len(b) < 4*subKeySize {
-		panic("not enough bytes")
+		return Principal{}, fmt.Errorf("%w: not enough bytes. Expected %d but got %d", ErrBadKey, 4*subKeySize, len(b))
 	}
 	p := new(Principal)
 	err := p.UnmarshalBinary(b)
 	if err != nil {
-		panic(err)
+		return Principal{}, err
 	}
-	return *p
+	return *p, nil
 }

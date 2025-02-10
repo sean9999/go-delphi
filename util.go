@@ -2,7 +2,7 @@ package delphi
 
 import (
 	"crypto/sha256"
-	"encoding"
+	"encoding/json"
 	"errors"
 	"io"
 
@@ -81,14 +81,14 @@ func extractSharedSecret(ephemeralPubKey, recipientPrivKey, recipientPubKey []by
 	return sharedSecret, nil
 }
 
-func encrypt(sharedSec, plainText, nonce []byte, metadata encoding.BinaryMarshaler) ([]byte, error) {
+func encrypt(sharedSec, plainText, nonce []byte, metadata json.Marshaler) ([]byte, error) {
 	aead, err := chacha20poly1305.New(sharedSec)
 	if err != nil {
 		return nil, err
 	}
 	var aad []byte
 	if metadata != nil {
-		aad, err = metadata.MarshalBinary()
+		aad, err = metadata.MarshalJSON()
 		if err != nil {
 			return nil, err
 		}
@@ -96,12 +96,12 @@ func encrypt(sharedSec, plainText, nonce []byte, metadata encoding.BinaryMarshal
 	return aead.Seal(nil, nonce, plainText, aad), nil
 }
 
-func decrypt(sharedSec, cipherText, nonce []byte, metadata encoding.BinaryMarshaler) ([]byte, error) {
+func decrypt(sharedSec, cipherText, nonce []byte, metadata json.Marshaler) ([]byte, error) {
 	aead, err := chacha20poly1305.New(sharedSec)
 	if err != nil {
 		return nil, err
 	}
-	aad, err := metadata.MarshalBinary()
+	aad, err := metadata.MarshalJSON()
 	if err != nil {
 		return nil, err
 	}

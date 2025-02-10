@@ -19,8 +19,8 @@ func TestEncrypt(t *testing.T) {
 	msg.Sender = alice.PublicKey()
 	msg.Recipient = bob.PublicKey()
 
-	msg.Headers.Set("foo", []byte("bar"))
-	msg.Headers.Set("bing", []byte("bat"))
+	msg.Headers.Set("foo", "bar")
+	msg.Headers.Set("bing", "bat")
 
 	err := msg.Encrypt(randy, alice, nil)
 	assert.NoError(t, err)

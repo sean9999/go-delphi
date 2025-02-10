@@ -5,31 +5,44 @@ import (
 	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/hex"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
 
-	stablemap "github.com/sean9999/go-stable-map"
+	"github.com/sean9999/pear"
 	"github.com/vmihailenco/msgpack/v5"
+	omap "github.com/wk8/go-ordered-map/v2"
 )
+
+// KV is a key-value store whose keys are ordered, offering deterministic serialization
+type KV = omap.OrderedMap[string, string]
+
+func NewKV() *omap.OrderedMap[string, string] {
+	kv := omap.New[string, string]()
+	return kv
+}
 
 var ErrNotImplemented = errors.New("not implemented")
 
 // a Message is a message that represents either plain text or cipher text,
 // encapsulating all data and metadata necessary to perform cryptographic operations.
 type Message struct {
-	Recipient  Key                                  `msgpack:"to"`
-	Sender     Key                                  `msgpack:"from"`
-	Headers    *stablemap.StableMap[string, []byte] `msgpack:"hdrs"` // additional authenticated data (AAD)
-	ephPubkey  []byte                               `msgpack:"ephkey"`
-	nonce      Nonce                                `msgpack:"nonce"`
-	cipherText []byte                               `msgpack:"ctxt"`
-	PlainText  []byte                               `msgpack:"ptxt"`
-	signature  []byte                               `msgpack:"sig"`
+	readBuffer []byte `msgpack:"-"`
+  Subject    string `msgpack:"subj" json:"subj"`
+  Recipient  Key    `msgpack:"to" json:"to"`
+  Sender     Key    `msgpack:"from" json:"from"`
+  Headers    *KV    `msgpack:"hdrs" json:"hdrs"` // additional authenticated data (AAD)
+  ephPubkey  []byte `msgpack:"ephkey" json:"ephkey"`
+  nonce      Nonce  `msgpack:"nonce" json:"nonce"`
+  cipherText []byte `msgpack:"ctxt" json:"cipherText"`
+  PlainText  []byte `msgpack:"ptxt" json:"plainText"`
+  signature  []byte `msgpack:"sig" json:"sig"`
 }
 
-// To() returns the recipient as a public encryption key
-func (m *Message) To() crypto.PublicKey {
+// RecipientEncryption() returns the recipient as a public encryption key
+func (m *Message) RecipientEncryption() crypto.PublicKey {
 	k, err := ecdh.X25519().NewPublicKey(m.Recipient.Encryption().Bytes())
 	if err != nil {
 		panic(err)
@@ -37,8 +50,8 @@ func (m *Message) To() crypto.PublicKey {
 	return k
 }
 
-// From() returns the sender as a public encryption key
-func (m *Message) From() crypto.PublicKey {
+// SenderEncryption() returns the sender as a public encryption key
+func (m *Message) SenderEncryption() crypto.PublicKey {
 	k, err := ecdh.X25519().NewPublicKey(m.Sender.Encryption().Bytes())
 	if err != nil {
 		panic(err)
@@ -90,6 +103,107 @@ func (m *Message) UnmarshalBinary(p []byte) error {
 	return msgpack.Unmarshal(p, m)
 }
 
+// toStringMap converts an ordered set to an unordered map
+func toStringMap(msg *Message) map[string]string {
+	n := make(map[string]string)
+
+	for pair := msg.Headers.Oldest(); pair != nil; pair = pair.Next() {
+		n[pair.Key] = pair.Value
+	}
+
+	n["signature"] = fmt.Sprintf("%x", msg.Signature())
+	n["nonce"] = fmt.Sprintf("%x", msg.nonce)
+	n["from"] = msg.Sender.ToHex()
+	return n
+}
+
+func (m *Message) ToPEM() pem.Block {
+
+	var b []byte
+	if m.Encrypted() {
+		b = m.cipherText
+	} else {
+		b = m.PlainText
+	}
+
+	p := pem.Block{
+		Type:    m.Subject,
+		Headers: toStringMap(m),
+		Bytes:   b,
+	}
+	return p
+}
+
+func extractHex(hdrs map[string]string, key string) ([]byte, error) {
+
+	val, exists := hdrs[key]
+	if !exists {
+		return nil, pear.Errorf("key doesn't exist: %q", key)
+	}
+
+	b, err := hex.DecodeString(val)
+	if err != nil {
+		return nil, pear.Errorf("failed to extract hex: %w", err)
+	}
+
+	return b, nil
+}
+
+func (m *Message) FromPEM(p pem.Block) error {
+
+	m.Headers = NewKV()
+
+	for k, v := range p.Headers {
+		switch k {
+		case "nonce":
+			nonce, err := extractHex(p.Headers, "nonce")
+			if err != nil {
+				return err
+			}
+			m.nonce = Nonce(nonce)
+		case "signature":
+			sig, err := extractHex(p.Headers, "signature")
+			if err != nil {
+				return err
+			}
+			m.signature = sig
+		case "from":
+			pubKeyBytes, err := extractHex(p.Headers, "from")
+			if err != nil {
+				return err
+			}
+			m.Sender = Key{}.From(pubKeyBytes)
+		default:
+			m.Headers.Set(k, v)
+		}
+
+	}
+
+	m.Subject = p.Type
+	m.PlainText = p.Bytes
+	return nil
+}
+
+func (m *Message) String() string {
+	p := m.ToPEM()
+	pemBytes := pem.EncodeToMemory(&p)
+	return string(pemBytes)
+}
+
+func (m *Message) Read(b []byte) (int, error) {
+	if m.readBuffer == nil {
+		p := m.ToPEM()
+		m.readBuffer = pem.EncodeToMemory(&p)
+	}
+	if len(m.readBuffer) > 0 {
+		bytesWritten := copy(b, m.readBuffer)
+		m.readBuffer = m.readBuffer[bytesWritten:]
+		return bytesWritten, nil
+	} else {
+		return 0, io.EOF
+	}
+}
+
 func (msg *Message) Plain() bool {
 	return len(msg.PlainText) > 0
 }
@@ -128,25 +242,29 @@ func (msg *Message) Digest() ([]byte, error) {
 
 	sum := make([]byte, 0)
 	sum = append(sum, msg.Sender.Bytes()...)
-	headers, err := msg.Headers.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	sum = append(sum, headers...)
 	sum = append(sum, msg.nonce[:]...)
-
 	if msg.Encrypted() {
 		sum = append(sum, msg.cipherText...)
 	} else {
 		sum = append(sum, msg.PlainText...)
 	}
 
+	//	let's no include headers because since the order cannot be known
+	//	it's too hard to acheive determinism
+	// if msg.Headers.Length() > 0 {
+	// 	headers, err := msg.Headers.MarshalBinary()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	sum = append(sum, headers...)
+	// }
+
 	return hash.Sum(sum), nil
 }
 
 // msg.Sign(Signer) is another way of doing signer.Sign(*Message)
 func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
-	var errSign = errors.New("could not sign message")
+	var errSign = pear.Defer("could not sign message")
 	msg.ensureNonce(randy)
 	digest, err := msg.Digest()
 	if err != nil {
@@ -160,6 +278,16 @@ func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
 	return nil
 }
 
+// Verify() verifies a signature
+func (msg *Message) Verify() bool {
+	digest, err := msg.Digest()
+	if err != nil {
+		panic(err)
+	}
+	edpub := ed25519.PublicKey(msg.Sender.Signing().Bytes())
+	return ed25519.Verify(edpub, digest, msg.signature)
+}
+
 // msg.Encrypt(Encrypter) is another way of doing encrypter.Encrypt(*Message)
 func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, opts EncrypterOpts) error {
 	return encrypter.Encrypt(randy, msg, opts)
@@ -168,7 +296,7 @@ func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, opts Encrypter
 // NewMessage() creates a new Message
 func NewMessage(randy io.Reader, plainTxt []byte) *Message {
 	msg := new(Message)
-	msg.Headers = stablemap.New[string, []byte]()
+	msg.Headers = NewKV()
 	msg.ensureNonce(randy)
 	msg.PlainText = plainTxt
 	return msg

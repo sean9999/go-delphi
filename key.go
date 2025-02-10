@@ -1,9 +1,12 @@
 package delphi
 
 import (
+	"bytes"
 	"crypto/ecdh"
 	"crypto/ed25519"
+	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"slices"
 )
@@ -29,6 +32,10 @@ func (s subKey) Bytes() []byte {
 
 // a Key is two (specifically one encryption and one signing) subKeys
 type Key [2]subKey
+
+func (k Key) MarshalText() ([]byte, error) {
+	return []byte(k.ToHex()), nil
+}
 
 // a Key is zero if all it's subKeys are zero
 func (k Key) IsZero() bool {
@@ -61,11 +68,30 @@ func (k Key) Bytes() []byte {
 	return b
 }
 
+func (k Key) ToInt64() int64 {
+	var num int64
+	buf := bytes.NewReader(k.Bytes())
+	err := binary.Read(buf, binary.BigEndian, &num)
+	if err != nil {
+		// Handle the error appropriately
+	}
+	return num
+}
+
 func (k Key) Equal(j Key) bool {
 	for i := range 2 {
-		if !slices.Equal(k[i][:], j[i][:]) {
+
+		jslice := j[i][:]
+		kslice := k[i][:]
+		same := slices.Equal(jslice, kslice)
+
+		if !same {
 			return false
 		}
+
+		// if !slices.Equal(k[i][:], j[i][:]) {
+		// 	return false
+		// }
 	}
 	return true
 }
@@ -85,6 +111,10 @@ func (k KeyPair) Bytes() []byte {
 	return b
 }
 
+func (k Key) ToHex() string {
+	return hex.EncodeToString(k.Bytes())
+}
+
 func KeyFromHex(str string) Key {
 	bin, err := hex.DecodeString(str)
 	if err != nil {
@@ -94,8 +124,12 @@ func KeyFromHex(str string) Key {
 }
 
 func KeyFromBytes(b []byte) Key {
-	if len(b) != subKeySize {
-		panic("wrong length for key")
+
+	gotSize := len(b)
+	wantSize := subKeySize * 2
+
+	if gotSize != wantSize {
+		panic(fmt.Sprintf("wrong length for key. Wanted %d but got %d", wantSize, gotSize))
 	}
 	k := Key{}
 	copy(k[0][:], b[:subKeySize])

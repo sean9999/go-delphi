@@ -1,4 +1,4 @@
-REPO=github.com/sean9999/go-delphi
+REPO=$$(git remote -v | head -n 1 | cut -f 2 | cut -w -f 1 | cut -c 9-)
 SEMVER := $$(git tag --sort=-version:refname | head -n 1)
 BRANCH := $$(git branch --show-current)
 REF := $$(git describe --dirty --tags --always)
@@ -6,7 +6,6 @@ GOPROXY=proxy.golang.org
 
 info:
 	@printf "REPO:\t%s\nSEMVER:\t%s\nBRANCH:\t%s\nREF:\t%s\n" $(REPO) $(SEMVER) $(BRANCH) $(REF)
-
 
 tidy:
 	go mod tidy
