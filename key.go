@@ -33,6 +33,26 @@ func (s subKey) Bytes() []byte {
 // a Key is two (specifically one encryption and one signing) subKeys
 type Key [2]subKey
 
+func (k Key) MarshalJson() ([]byte, error) {
+	str := k.ToHex()
+	return []byte(str), nil
+}
+
+func (k *Key) UnmarshalJSON(b []byte) error {
+	j := KeyFromHex(string(b))
+	copy(k[:], j[:])
+	return nil
+}
+
+// func (k Key) UnmarshalJSON(hexbytes []byte) error {
+// 	actualBytes, err := hex.DecodeString(string(hexbytes))
+// 	if err != nil {
+// 		return err
+// 	}
+// 	copy(k[:][:], actualBytes)
+// 	return nil
+// }
+
 func (k Key) MarshalText() ([]byte, error) {
 	return []byte(k.ToHex()), nil
 }

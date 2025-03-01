@@ -32,8 +32,6 @@ func (p *Principal) Sign(_ io.Reader, digest []byte, _ crypto.SignerOpts) ([]byt
 
 // Verify() verifies a signature
 func (p *Principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []byte) bool {
-	//dpub := delphiPubKey.(Key)
-	//edpub := ed25519.PublicKey(dpub[1][:])
 	edpub := ed25519.PublicKey(delphiPubKey.(Key).Signing().Bytes())
 	return ed25519.Verify(edpub, digest, sig)
 }
@@ -60,7 +58,12 @@ func (p *Principal) Encrypt(randy io.Reader, msg *Message, opts any) error {
 	msg.ensureNonce(randy)
 	msg.ephPubkey = eph
 
-	ciph, err := encrypt(sec, msg.PlainText, msg.nonce.Bytes(), msg.Headers)
+	binHeaders, err := msg.Headers.MarshalBinary()
+	if err != nil {
+		return err
+	}
+
+	ciph, err := encrypt(sec, msg.PlainText, msg.nonce.Bytes(), binHeaders)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrDelphi, err)
 	}
@@ -78,7 +81,13 @@ func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 	if err != nil {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}
-	plainTxt, err := decrypt(sharedSec, msg.cipherText, msg.nonce[:], msg.Headers)
+
+	binHeaders, err := msg.Headers.MarshalBinary()
+	if err != nil {
+		return err
+	}
+
+	plainTxt, err := decrypt(sharedSec, msg.cipherText, msg.nonce[:], binHeaders)
 	if err != nil {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}

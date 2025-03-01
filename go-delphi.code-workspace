@@ -7,6 +7,10 @@
     {
       "name": "Pear",
       "path": "../pear"
+    },
+    {
+      "name": "Stable Map",
+      "path": "../go-stable-map"
     }
 	],
 	"settings": {

@@ -23,8 +23,8 @@ func TestExample(t *testing.T) {
 	msg.Recipient = bob.PublicKey()
 
 	//	add some metadata (this becomes AAD)
-	msg.Headers.Set("foo", "bar")
-	msg.Headers.Set("bing", "bat")
+	msg.Headers["foo"] = "bar"
+	msg.Headers["bing"] = "bat"
 
 	//	encrypt message
 	err := msg.Encrypt(rand.Reader, alice, nil)
@@ -38,7 +38,7 @@ func TestExample(t *testing.T) {
 	assert.Equal(t, sentence, msg.PlainText)
 
 	//	has the metadata survived?
-	foo, ok := msg.Headers.Get("foo")
+	foo, ok := msg.Headers["foo"]
 	assert.True(t, ok)
 	assert.Equal(t, "bar", foo)
 

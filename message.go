@@ -13,16 +13,7 @@ import (
 
 	"github.com/sean9999/pear"
 	"github.com/vmihailenco/msgpack/v5"
-	omap "github.com/wk8/go-ordered-map/v2"
 )
-
-// KV is a key-value store whose keys are ordered, offering deterministic serialization
-type KV = omap.OrderedMap[string, string]
-
-func NewKV() *omap.OrderedMap[string, string] {
-	kv := omap.New[string, string]()
-	return kv
-}
 
 var ErrNotImplemented = errors.New("not implemented")
 
@@ -30,15 +21,15 @@ var ErrNotImplemented = errors.New("not implemented")
 // encapsulating all data and metadata necessary to perform cryptographic operations.
 type Message struct {
 	readBuffer []byte `msgpack:"-"`
-  Subject    string `msgpack:"subj" json:"subj"`
-  Recipient  Key    `msgpack:"to" json:"to"`
-  Sender     Key    `msgpack:"from" json:"from"`
-  Headers    *KV    `msgpack:"hdrs" json:"hdrs"` // additional authenticated data (AAD)
-  ephPubkey  []byte `msgpack:"ephkey" json:"ephkey"`
-  nonce      Nonce  `msgpack:"nonce" json:"nonce"`
-  cipherText []byte `msgpack:"ctxt" json:"cipherText"`
-  PlainText  []byte `msgpack:"ptxt" json:"plainText"`
-  signature  []byte `msgpack:"sig" json:"sig"`
+	Subject    string `msgpack:"subj" json:"subj"`
+	Recipient  Key    `msgpack:"to" json:"to"`
+	Sender     Key    `msgpack:"from" json:"from"`
+	Headers    KV     `msgpack:"hdrs" json:"hdrs"` // additional authenticated data (AAD)
+	ephPubkey  []byte `msgpack:"ephkey" json:"ephkey"`
+	nonce      Nonce  `msgpack:"nonce" json:"nonce"`
+	cipherText []byte `msgpack:"ctxt" json:"cipherText"`
+	PlainText  []byte `msgpack:"ptxt" json:"plainText"`
+	signature  []byte `msgpack:"sig" json:"sig"`
 }
 
 // RecipientEncryption() returns the recipient as a public encryption key
@@ -105,16 +96,11 @@ func (m *Message) UnmarshalBinary(p []byte) error {
 
 // toStringMap converts an ordered set to an unordered map
 func toStringMap(msg *Message) map[string]string {
-	n := make(map[string]string)
-
-	for pair := msg.Headers.Oldest(); pair != nil; pair = pair.Next() {
-		n[pair.Key] = pair.Value
-	}
-
-	n["signature"] = fmt.Sprintf("%x", msg.Signature())
-	n["nonce"] = fmt.Sprintf("%x", msg.nonce)
-	n["from"] = msg.Sender.ToHex()
-	return n
+	m := msg.Headers
+	m["signature"] = fmt.Sprintf("%x", msg.Signature())
+	m["nonce"] = fmt.Sprintf("%x", msg.nonce)
+	m["from"] = msg.Sender.ToHex()
+	return m
 }
 
 func (m *Message) ToPEM() pem.Block {
@@ -151,7 +137,7 @@ func extractHex(hdrs map[string]string, key string) ([]byte, error) {
 
 func (m *Message) FromPEM(p pem.Block) error {
 
-	m.Headers = NewKV()
+	m.Headers = make(KV)
 
 	for k, v := range p.Headers {
 		switch k {
@@ -174,7 +160,7 @@ func (m *Message) FromPEM(p pem.Block) error {
 			}
 			m.Sender = Key{}.From(pubKeyBytes)
 		default:
-			m.Headers.Set(k, v)
+			m.Headers[k] = v
 		}
 
 	}
@@ -204,6 +190,14 @@ func (m *Message) Read(b []byte) (int, error) {
 	}
 }
 
+func (m *Message) Write(b []byte) (int, error) {
+	pm, _ := pem.Decode(b)
+	m.Subject = pm.Type
+	m.PlainText = pm.Bytes
+	m.Headers = pm.Headers
+	return len(b), io.EOF
+}
+
 func (msg *Message) Plain() bool {
 	return len(msg.PlainText) > 0
 }
@@ -220,13 +214,8 @@ func (msg *Message) Valid() bool {
 // Digest() returns that portion of a Message which should be hashed and signed
 func (msg *Message) Digest() ([]byte, error) {
 
-	//	Some fields are included. Some are required. Some are intentially omitted:
-	//	To is omitted. A messages digest is the same regardless of who it's sent to.
-	//	From is required. Who its from is integral.
-	//	Headers are included if they exists, but not if not. They are treated as AAD.
-	//	Nonce is required, to ensure uniqueness
-	//	Ephemeral Key is omitted. Nonce provides all necessary randomness
-	//	Either plain or cipher text is included. It's an error to have both or neither.
+	//	Some fields are included. Some are required. Some are intentially omitted.
+	//	Consider which should be which
 
 	hash := sha256.New()
 
@@ -237,7 +226,7 @@ func (msg *Message) Digest() ([]byte, error) {
 		return nil, errors.New("nonce is zero")
 	}
 	if msg.Sender.IsZero() {
-		return nil, errors.New("From is zero")
+		return nil, errors.New("Sender is zero")
 	}
 
 	sum := make([]byte, 0)
@@ -249,15 +238,10 @@ func (msg *Message) Digest() ([]byte, error) {
 		sum = append(sum, msg.PlainText...)
 	}
 
-	//	let's no include headers because since the order cannot be known
-	//	it's too hard to acheive determinism
-	// if msg.Headers.Length() > 0 {
-	// 	headers, err := msg.Headers.MarshalBinary()
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	sum = append(sum, headers...)
-	// }
+	for k, v := range msg.Headers.LexicalOrder() {
+		sum = append(sum, []byte(k)...)
+		sum = append(sum, []byte(v)...)
+	}
 
 	return hash.Sum(sum), nil
 }
@@ -296,7 +280,7 @@ func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, opts Encrypter
 // NewMessage() creates a new Message
 func NewMessage(randy io.Reader, plainTxt []byte) *Message {
 	msg := new(Message)
-	msg.Headers = NewKV()
+	msg.Headers = make(KV)
 	msg.ensureNonce(randy)
 	msg.PlainText = plainTxt
 	return msg
