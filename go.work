@@ -4,4 +4,5 @@ use (
 	.
 	../pear
 	../go-stable-map
+	../hermeti
 )
