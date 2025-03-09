@@ -2,17 +2,9 @@
 	"folders": [
     {
       "name": "Delphi",
-			"path": "."
-		},
-    {
-      "name": "Pear",
-      "path": "../pear"
-    },
-    {
-      "name": "Stable Map",
-      "path": "../go-stable-map"
+      "path": "."
     }
-	],
+  ],
 	"settings": {
 		"workbench.colorCustomizations": {
             "commandCenter.border": "#15202b99",
