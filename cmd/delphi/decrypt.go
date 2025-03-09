@@ -4,6 +4,6 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func info(env hermeti.Env) {
+func Info(env hermeti.Env) {
 
 }
