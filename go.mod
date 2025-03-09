@@ -3,7 +3,7 @@ module github.com/sean9999/go-delphi
 go 1.23.2
 
 require (
-	github.com/sean9999/hermeti v0.0.1
+	github.com/sean9999/hermeti v0.1.1
 	github.com/sean9999/pear v0.0.5
 	github.com/stretchr/testify v1.9.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
@@ -16,7 +16,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
