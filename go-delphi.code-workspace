@@ -2,17 +2,13 @@
 	"folders": [
     {
       "name": "Delphi",
-			"path": "."
-		},
-    {
-      "name": "Pear",
-      "path": "../pear"
+      "path": "."
     },
     {
-      "name": "Stable Map",
-      "path": "../go-stable-map"
+      "name": "Hermeti",
+      "path": "../hermeti"
     }
-	],
+  ],
 	"settings": {
 		"workbench.colorCustomizations": {
             "commandCenter.border": "#15202b99",

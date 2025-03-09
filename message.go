@@ -25,11 +25,11 @@ type Message struct {
 	Recipient  Key    `msgpack:"to" json:"to"`
 	Sender     Key    `msgpack:"from" json:"from"`
 	Headers    KV     `msgpack:"hdrs" json:"hdrs"` // additional authenticated data (AAD)
-	ephPubkey  []byte `msgpack:"ephkey" json:"ephkey"`
-	nonce      Nonce  `msgpack:"nonce" json:"nonce"`
-	cipherText []byte `msgpack:"ctxt" json:"cipherText"`
+	ephPubkey  []byte
+	nonce      Nonce
+	cipherText []byte
 	PlainText  []byte `msgpack:"ptxt" json:"plainText"`
-	signature  []byte `msgpack:"sig" json:"sig"`
+	signature  []byte
 }
 
 // RecipientEncryption() returns the recipient as a public encryption key
