@@ -97,9 +97,18 @@ func (m *Message) UnmarshalBinary(p []byte) error {
 // toStringMap converts an ordered set to an unordered map
 func toStringMap(msg *Message) map[string]string {
 	m := msg.Headers
-	m["signature"] = fmt.Sprintf("%x", msg.Signature())
-	m["nonce"] = fmt.Sprintf("%x", msg.nonce)
-	m["from"] = msg.Sender.ToHex()
+
+	//	a message doesn't need to care about validating, signing, or encrpyting
+	sig := msg.Signature()
+	if len(sig) > 0 {
+		m["signature"] = fmt.Sprintf("%x", msg.Signature())
+	}
+	if !msg.nonce.IsZero() {
+		m["nonce"] = fmt.Sprintf("%x", msg.nonce)
+	}
+	if !msg.Sender.IsZero() {
+		m["from"] = msg.Sender.ToHex()
+	}
 	return m
 }
 

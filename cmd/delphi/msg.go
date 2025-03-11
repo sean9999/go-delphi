@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"io"
+
+	"github.com/sean9999/go-delphi"
 	"github.com/sean9999/hermeti"
 )
 
@@ -15,8 +18,14 @@ func (a *appstate) msg(env hermeti.Env) {
 		return
 	}
 
-	msg := strings.Join(env.Args[2:], " ")
+	//	ensure line ending
+	body := strings.Join(env.Args[2:], " ")
+	body = strings.TrimRight(body, "\n") + "\n"
 
-	fmt.Fprintln(env.OutStream, msg)
+	msg := delphi.NewMessage(env.Randomness, []byte(body))
+
+	msg.Sender = a.self.PublicKey()
+
+	io.Copy(env.OutStream, msg)
 
 }

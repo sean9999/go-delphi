@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 
+	"encoding/pem"
+
 	"github.com/goombaio/namegenerator"
 	"github.com/sean9999/pear"
 )
@@ -185,4 +187,29 @@ func (p Peer) Nickname() string {
 	nameGenerator := namegenerator.NewNameGenerator(seed)
 	name := nameGenerator.Generate()
 	return name
+}
+
+func (p Principal) MarhsalPEM() (pem.Block, error) {
+	blk := pem.Block{
+		Type: "DELPHI PRIVATE KEY",
+		Headers: map[string]string{
+			"nick": p.Nickname(),
+		},
+		Bytes: p.Bytes(),
+	}
+	return blk, nil
+}
+
+func (p Principal) UnmarshalPEM(b pem.Block) error {
+	if b.Type != "DELPHI PRIVATE KEY" {
+		return errors.New("wrong type of PEM")
+	}
+	if len(b.Bytes) != subKeySize*4 {
+		return fmt.Errorf("wrong byte size for private key. wanted %d but got %d", subKeySize*4, len(b.Bytes))
+	}
+	copy(p[0][0][:], b.Bytes[0:subKeySize])
+	copy(p[0][1][:], b.Bytes[subKeySize:subKeySize*2])
+	copy(p[1][0][:], b.Bytes[subKeySize*2:subKeySize*3])
+	copy(p[1][1][:], b.Bytes[subKeySize*3:])
+	return nil
 }

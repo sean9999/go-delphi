@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"io"
 
@@ -16,8 +15,12 @@ type appstate struct {
 
 func (a *appstate) Run(env hermeti.Env) {
 	switch a.subcommand {
+	case "create":
+		a.create(env)
 	case "pub":
 		a.pub(env)
+	case "nick":
+		a.nick(env)
 	case "msg":
 		a.msg(env)
 	case "encrypt":
@@ -65,7 +68,6 @@ func main() {
 	state := new(appstate)
 	cli := hermeti.NewRealCli[*appstate](state)
 	state.init(cli.Env)
-	ctx := context.Background()
-	cli.Run(ctx)
+	cli.Run()
 
 }
