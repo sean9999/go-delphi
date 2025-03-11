@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/goombaio/namegenerator"
 	"github.com/sean9999/pear"
 )
 
@@ -84,7 +85,7 @@ func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 
 	binHeaders, err := msg.Headers.MarshalBinary()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not decrypt: %w", err)
 	}
 
 	plainTxt, err := decrypt(sharedSec, msg.cipherText, msg.nonce[:], binHeaders)
@@ -169,4 +170,19 @@ func (Principal) From(b []byte) (Principal, error) {
 		return Principal{}, err
 	}
 	return *p, nil
+}
+
+func (p Principal) Nickname() string {
+	return p.PublicKey().Nickname()
+}
+
+// a Peer is the public portion of a Principal, which is a public-private key pair
+type Peer = Key
+
+// a Nickname is a very memorable string for humans only. Not to be used for actual uniqueness.
+func (p Peer) Nickname() string {
+	seed := p.ToInt64()
+	nameGenerator := namegenerator.NewNameGenerator(seed)
+	name := nameGenerator.Generate()
+	return name
 }

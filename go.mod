@@ -3,6 +3,7 @@ module github.com/sean9999/go-delphi
 go 1.23.2
 
 require (
+	github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e
 	github.com/sean9999/hermeti v0.1.1
 	github.com/sean9999/pear v0.0.5
 	github.com/stretchr/testify v1.9.0

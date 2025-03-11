@@ -22,21 +22,33 @@ func (a *appstate) Run(env hermeti.Env) {
 		a.msg(env)
 	case "encrypt":
 		a.encrypt(env)
+	case "decrypt":
+		a.decrypt(env)
 	}
 }
 
 func (a *appstate) init(env hermeti.Env) error {
 
 	var privFile string
-	f := flag.NewFlagSet("danny", flag.ExitOnError)
+	f := flag.NewFlagSet("fset", flag.ExitOnError)
 	f.StringVar(&privFile, "priv", "", "private key file")
+	f.Parse(env.Args)
 
-	// fd, err := env.Filesystem.Open(privFile)
-
-	keybytes, err := io.ReadAll(env.InStream)
-	if err != nil {
-		return err
+	var keybytes []byte
+	var err error
+	if len(privFile) > 0 {
+		fd, err := env.Filesystem.Open(privFile)
+		if err != nil {
+			return err
+		}
+		keybytes, err = io.ReadAll(fd)
+	} else {
+		keybytes, err = io.ReadAll(env.InStream)
+		if err != nil {
+			return err
+		}
 	}
+
 	p, err := delphi.Principal{}.From(keybytes)
 	if err != nil {
 		return err
