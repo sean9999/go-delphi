@@ -9,6 +9,11 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
+// type appstate struct {
+// 	self *delphi.User
+// 	// Add other fields as needed
+// }
+
 func (a *appstate) encrypt(env hermeti.Env) {
 
 	recipient := ""
