@@ -13,7 +13,6 @@ tidy:
 clean:
 	go clean
 	go clean -modcache
-	rm bin/*
 
 pkgsite:
 	if [ -z "$$(command -v pkgsite)" ]; then go install golang.org/x/pkgsite/cmd/pkgsite@latest; fi

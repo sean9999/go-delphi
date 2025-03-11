@@ -3,10 +3,6 @@
     {
       "name": "Delphi",
       "path": "."
-    },
-    {
-      "name": "Hermeti",
-      "path": "../hermeti"
     }
   ],
 	"settings": {
