@@ -2,6 +2,7 @@ package delphi
 
 import (
 	"encoding/json"
+	"fmt"
 	"iter"
 	"slices"
 	"strings"
@@ -9,6 +10,14 @@ import (
 
 // a KV is a simple map with some super powers useful to us
 type KV map[string]string
+
+func (kv KV) Set(keyspace string, key string, val string) {
+	kv[fmt.Sprintf("%s/%s", keyspace, key)] = val
+}
+
+func (kv KV) Get(keyspace string, key string) string {
+	return kv[fmt.Sprintf("%s/%s", keyspace, key)]
+}
 
 func (kv KV) MarshalBinary() ([]byte, error) {
 	lines := make([]string, 0, len(kv)*2)

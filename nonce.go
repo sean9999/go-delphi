@@ -29,3 +29,9 @@ func NewNonce(randy io.Reader) Nonce {
 	io.ReadFull(randy, n[:])
 	return n
 }
+
+func NonceFromBytes(b []byte) Nonce {
+	var n Nonce
+	copy(n[:], b)
+	return n
+}

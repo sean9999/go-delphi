@@ -10,7 +10,7 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-// output pub key
+// take in some data and return a PEM where that data is the body
 func (a *appstate) msg(env hermeti.Env) {
 
 	if len(env.Args) < 3 {
@@ -22,9 +22,9 @@ func (a *appstate) msg(env hermeti.Env) {
 	body := strings.Join(env.Args[2:], " ")
 	body = strings.TrimRight(body, "\n") + "\n"
 
-	msg := delphi.NewMessage(env.Randomness, []byte(body))
+	msg := delphi.NewMessage(env.Randomness, "DELPHI PLAIN MESSAGE", []byte(body))
 
-	msg.Sender = a.self.PublicKey()
+	msg.SenderKey = a.self.PublicKey()
 
 	io.Copy(env.OutStream, msg)
 

@@ -18,9 +18,9 @@ func TestExample(t *testing.T) {
 	bob := delphi.NewPrincipal(rand.Reader)
 
 	//	create a message for bob, from alice
-	msg := delphi.NewMessage(rand.Reader, sentence)
-	msg.Sender = alice.PublicKey()
-	msg.Recipient = bob.PublicKey()
+	msg := delphi.NewMessage(rand.Reader, delphi.PlainMessage, sentence)
+	msg.SenderKey = alice.PublicKey()
+	msg.RecipientKey = bob.PublicKey()
 
 	//	add some metadata (this becomes AAD)
 	msg.Headers["foo"] = "bar"

@@ -1,41 +1,61 @@
 package main
 
 import (
-	"flag"
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/sean9999/go-delphi"
 	"github.com/sean9999/hermeti"
 )
 
-// type appstate struct {
-// 	self *delphi.User
-// 	// Add other fields as needed
-// }
+// find and return from all PEMs in bag, a public key. return it as such
+func (a *appstate) PluckPeer() (pubkey delphi.Key) {
+	_recipientPem := a.pems.Pluck(delphi.Pubkey)
+	if _recipientPem != nil {
+		pubkey = delphi.KeyFromHex(string(_recipientPem.Bytes))
+	}
+	return pubkey
+}
 
+func (a *appstate) PluckPlain() *delphi.Message {
+	p := a.pems.Pluck(delphi.PlainMessage)
+	if p == nil {
+		return nil
+	}
+	msg := new(delphi.Message)
+	err := msg.FromPEM(*p)
+	if err != nil {
+		return nil
+	}
+	return msg
+}
+
+// encrypt a PEM-encoded plain message, thereby turning it into an encrypted message
 func (a *appstate) encrypt(env hermeti.Env) {
 
-	recipient := ""
-	fset := flag.NewFlagSet("recipient", flag.ExitOnError)
-	fset.StringVar(&recipient, "to", "", "recipient public key")
-	fset.Parse(env.Args[2:])
-	remainingArgs := fset.Args()
-
-	if len(recipient) == 0 {
-		fmt.Fprintln(env.ErrStream, "there must be a recipient")
+	//	self
+	hasPriv := a.PluckPriv()
+	if !hasPriv {
+		fmt.Fprintln(env.ErrStream, ErrNoPrivKey)
 		return
 	}
 
-	if len(remainingArgs) == 0 {
-		fmt.Fprintln(env.ErrStream, "not enough args")
+	//	recipient
+	recipient := a.PluckPeer()
+	if recipient.IsZero() {
+		fmt.Fprintln(env.ErrStream, ErrNoRecipient)
 		return
 	}
 
-	body := strings.Join(remainingArgs, " ")
-	msg := delphi.NewMessage(env.Randomness, []byte(body))
-	msg.Recipient = delphi.KeyFromHex(recipient)
-	msg.Sender = a.self.PublicKey()
+	//	message
+	msg := a.PluckPlain()
+	if msg == nil {
+		fmt.Fprintln(env.ErrStream, errors.New("nothing to encrypt"))
+		return
+	}
+
+	msg.RecipientKey = recipient
+	msg.SenderKey = a.self.PublicKey()
 
 	err := a.self.Encrypt(env.Randomness, msg, nil)
 	if err != nil {

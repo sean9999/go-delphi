@@ -14,7 +14,7 @@ type MockCipherer struct{}
 
 func (m *MockCipherer) Encrypt(r io.Reader, msg *Message, opts EncrypterOpts) error {
 	// Mock encryption logic
-	msg.cipherText = []byte("encrypted")
+	msg.CipherText = []byte("encrypted")
 	return nil
 }
 
@@ -30,17 +30,17 @@ func (m *MockCipherer) Public() crypto.PublicKey {
 
 func TestCipherer_Encrypt(t *testing.T) {
 	cipherer := &MockCipherer{}
-	msg := NewMessage(rand.Reader, []byte("hello world"))
+	msg := NewMessage(rand.Reader, PlainMessage, []byte("hello world"))
 
 	err := cipherer.Encrypt(rand.Reader, msg, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, []byte("encrypted"), msg.cipherText)
+	assert.Equal(t, []byte("encrypted"), msg.CipherText)
 }
 
 func TestCipherer_Decrypt(t *testing.T) {
 	cipherer := &MockCipherer{}
-	msg := NewMessage(rand.Reader, []byte("hello world"))
-	msg.cipherText = []byte("encrypted")
+	msg := NewMessage(rand.Reader, PlainMessage, []byte("hello world"))
+	msg.CipherText = []byte("encrypted")
 
 	priv := ed25519.NewKeyFromSeed(make([]byte, ed25519.SeedSize))
 	err := cipherer.Decrypt(msg, priv, nil)

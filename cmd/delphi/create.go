@@ -10,16 +10,20 @@ import (
 
 func (a *appstate) create(env hermeti.Env) {
 
-	p := delphi.NewPrincipal(env.Randomness)
+	if a.pems.Has(delphi.Privkey) {
+		fmt.Fprintln(env.ErrStream, "You passed in a private key. This operation is all about creating one.")
+		return
+	}
 
+	p := delphi.NewPrincipal(env.Randomness)
 	pemFile, err := p.MarhsalPEM()
+
+	//	I don't see how an error is possibe. Nevertheless...
 	if err != nil {
 		fmt.Fprintln(env.ErrStream, err)
 		return
 	}
 
 	pemBytes := pem.EncodeToMemory(&pemFile)
-
-	fmt.Fprintln(env.OutStream, string(pemBytes))
-
+	fmt.Fprint(env.OutStream, string(pemBytes))
 }

@@ -33,6 +33,22 @@ func (p *Principal) Sign(_ io.Reader, digest []byte, _ crypto.SignerOpts) ([]byt
 	return sig, nil
 }
 
+// Assert() creates a signed assertion
+func (p *Principal) Assert(randy io.Reader) (*Message, error) {
+
+	body := []byte("I assert that I am me.")
+	msg := p.ComposeMessage(randy, body)
+	msg.Subject = Assertion
+
+	err := msg.Sign(randy, p)
+	if err != nil {
+		return nil, fmt.Errorf("could not create assertion: %w", err)
+	}
+
+	return msg, nil
+
+}
+
 // Verify() verifies a signature
 func (p *Principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []byte) bool {
 	edpub := ed25519.PublicKey(delphiPubKey.(Key).Signing().Bytes())
@@ -49,30 +65,34 @@ func (p *Principal) Encrypt(randy io.Reader, msg *Message, opts any) error {
 		return fmt.Errorf("%w: there is no plain text to encrypt", ErrDelphi)
 	}
 
-	if msg.Recipient.IsZero() {
+	if msg.RecipientKey.IsZero() {
 		return fmt.Errorf("%w: recipient: %w", ErrDelphi, ErrBadKey)
 	}
 
-	sec, eph, err := generateSharedSecret(msg.Recipient.Encryption().Bytes(), randy)
+	sec, eph, err := generateSharedSecret(msg.RecipientKey.Encryption().Bytes(), randy)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrDelphi, err)
 	}
 
 	msg.ensureNonce(randy)
-	msg.ephPubkey = eph
+	msg.Eph = eph
 
 	binHeaders, err := msg.Headers.MarshalBinary()
 	if err != nil {
 		return err
 	}
 
-	ciph, err := encrypt(sec, msg.PlainText, msg.nonce.Bytes(), binHeaders)
+	ciph, err := encrypt(sec, msg.PlainText, msg.Nonce.Bytes(), binHeaders)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrDelphi, err)
 	}
 
-	msg.cipherText = ciph
+	msg.CipherText = ciph
 	msg.PlainText = nil
+
+	if msg.Subject == PlainMessage {
+		msg.Subject = EncryptedMessage
+	}
 
 	return nil
 }
@@ -80,7 +100,7 @@ func (p *Principal) Encrypt(randy io.Reader, msg *Message, opts any) error {
 // Decrypt() decrypts a [Message]
 func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 
-	sharedSec, err := extractSharedSecret(msg.ephPubkey, p.privateEncryptionKey().Bytes(), p.publicEncryptionKey().Bytes())
+	sharedSec, err := extractSharedSecret(msg.Eph, p.privateEncryptionKey().Bytes(), p.publicEncryptionKey().Bytes())
 	if err != nil {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}
@@ -90,18 +110,14 @@ func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}
 
-	plainTxt, err := decrypt(sharedSec, msg.cipherText, msg.nonce[:], binHeaders)
+	plainTxt, err := decrypt(sharedSec, msg.CipherText, msg.Nonce[:], binHeaders)
 	if err != nil {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}
 	msg.PlainText = plainTxt
-	msg.cipherText = nil
+	msg.CipherText = nil
 	return nil
 }
-
-// func (p principal) byteRange(from, to int) []byte {
-// 	return p[from:to]
-// }
 
 func (p *Principal) publicSigningKey() ed25519.PublicKey {
 	return ed25519.PublicKey(p[0][1][:])
@@ -190,17 +206,18 @@ func (p Peer) Nickname() string {
 }
 
 func (p Principal) MarhsalPEM() (pem.Block, error) {
+
 	blk := pem.Block{
 		Type: "DELPHI PRIVATE KEY",
 		Headers: map[string]string{
-			"nick": p.Nickname(),
+			fmt.Sprintf("%s/%s", Keyspace, "nick"): p.Nickname(),
 		},
 		Bytes: p.Bytes(),
 	}
 	return blk, nil
 }
 
-func (p Principal) UnmarshalPEM(b pem.Block) error {
+func (p *Principal) UnmarshalPEM(b pem.Block) error {
 	if b.Type != "DELPHI PRIVATE KEY" {
 		return errors.New("wrong type of PEM")
 	}
@@ -212,4 +229,11 @@ func (p Principal) UnmarshalPEM(b pem.Block) error {
 	copy(p[1][0][:], b.Bytes[subKeySize*2:subKeySize*3])
 	copy(p[1][1][:], b.Bytes[subKeySize*3:])
 	return nil
+}
+
+func (p Principal) ComposeMessage(randy io.Reader, body []byte) *Message {
+	msg := NewMessage(randy, "DELPHI PLAIN MESSAGE", body)
+	msg.SenderKey = p.PublicKey()
+	msg.PlainText = body
+	return msg
 }
