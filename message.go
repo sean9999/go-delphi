@@ -306,6 +306,11 @@ func (msg *Message) Digest() ([]byte, error) {
 
 // msg.Sign(Signer) is another way of doing signer.Sign(*Message)
 func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
+
+	if randy == nil {
+		return pear.New("a source of randomness was not passed in")
+	}
+
 	var errSign = pear.Defer("could not sign message")
 	msg.ensureNonce(randy)
 	digest, err := msg.Digest()
