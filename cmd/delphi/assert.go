@@ -8,7 +8,7 @@ import (
 
 func (a *appstate) create_assertion(env hermeti.Env) {
 
-	if !a.PluckPriv() {
+	if !a.pluckPriv() {
 		fmt.Fprintln(env.ErrStream, ErrNoPrivKey)
 		return
 	}

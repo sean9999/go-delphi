@@ -8,12 +8,13 @@ import (
 
 var ErrNoPrivKey = errors.New("no private key")
 
-func (a *appstate) PluckPriv() bool {
+func (a *appstate) pluckPriv() bool {
 	selfPem := a.pems.Pluck(delphi.Privkey)
 	if selfPem == nil {
 		return false
 	}
-	self := delphi.NewPrincipal(nil)
+
+	self := new(delphi.Principal)
 	err := self.UnmarshalPEM(*selfPem)
 	if err != nil {
 		return false

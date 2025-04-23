@@ -20,7 +20,7 @@ func TestPub(t *testing.T) {
 	subfs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
 	cli.Env.Mount(subfs, "./testdata")
 
-	//	read priv1.bin into stdin
+	//	read priv1.pem into stdin
 	fd, err := cli.Env.Filesystem.Open("./testdata/priv1.pem")
 	if err != nil {
 		t.Fatal(err)
@@ -29,7 +29,7 @@ func TestPub(t *testing.T) {
 
 	state.init(cli.Env)
 
-	//	run cat ./testdata/priv1.bin | delphi pub
+	//	run cat ./testdata/priv1.pem | delphi pub
 	cli.Run()
 
 	//	capture output
@@ -38,6 +38,6 @@ func TestPub(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.Equal(t, "bd35f721c26b36bdf163d69816d6ee7c90de8b63538807753d024c2d6d581513154b70722fef4cddb36ce3851d02113a539a6ed13315c3da459121db2a5695ca\n", string(output))
+	assert.Equal(t, "552610140110ff8aff154a5692c590ad636a900e1174db2e7547d6a3a0f4492697989199f98249fba3032b9434310adbda037e7753a2caf1c69dce3fadab5d3f\n", string(output))
 
 }

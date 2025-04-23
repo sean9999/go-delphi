@@ -34,7 +34,7 @@ func (a *appstate) PluckPlain() *delphi.Message {
 func (a *appstate) encrypt(env hermeti.Env) {
 
 	//	self
-	hasPriv := a.PluckPriv()
+	hasPriv := a.pluckPriv()
 	if !hasPriv {
 		fmt.Fprintln(env.ErrStream, ErrNoPrivKey)
 		return

@@ -12,14 +12,14 @@ import (
 
 func hasStdin(r io.Reader) (bool, error) {
 
-	stuff, err := io.ReadAll(r)
+	// stuff, err := io.ReadAll(r)
 
-	fmt.Println(string(stuff))
-	fmt.Println(err)
+	// fmt.Println(string(stuff))
+	// fmt.Println(err)
 
-	file, ok := r.(*os.File)
-	if !ok {
-		return false, nil
+	file, isFile := r.(*os.File)
+	if !isFile {
+		return (r != nil), nil
 	}
 	fi, err := file.Stat()
 	if err != nil {
@@ -39,7 +39,10 @@ type appstate struct {
 	pems       pemBag
 }
 
+// Run runs an *appstate against a hermiti.Env.
 func (a *appstate) Run(env hermeti.Env) {
+
+	//	a.subcommand is gotten from hermeti.Env.Args
 	switch a.subcommand {
 	case "create":
 		a.create(env)
@@ -66,6 +69,7 @@ func (a *appstate) Run(env hermeti.Env) {
 	}
 }
 
+// init initializes an *appstate with defaults globals
 func (a *appstate) init(env hermeti.Env) error {
 
 	var privFile string
@@ -77,6 +81,8 @@ func (a *appstate) init(env hermeti.Env) error {
 		a.subcommand = env.Args[1]
 	}
 
+	a.pems = make(pemBag)
+
 	switch a.subcommand {
 	default:
 
@@ -85,7 +91,7 @@ func (a *appstate) init(env hermeti.Env) error {
 			return fmt.Errorf("could not initialize: %w", err)
 		}
 		if has {
-			// read in all pems
+			// read in all pems and keep them in a bag
 			inBytes, readerr := io.ReadAll(env.InStream)
 			if readerr != nil {
 				return readerr
@@ -95,20 +101,7 @@ func (a *appstate) init(env hermeti.Env) error {
 				a.pems[delphi.Subject(thispem.Type)] = append(a.pems[delphi.Subject(thispem.Type)], *thispem)
 				thispem, remainder = readNextPem(remainder)
 			}
-
-			// find privkey, pluck it out, attach to "self"
-			// selfPem, pems := pluckPriv(a.pems)
-			// if selfPem != nil {
-			// 	p := new(delphi.Principal)
-			// 	err := p.UnmarshalPEM(*selfPem)
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// 	a.self = *p
-			// }
-			// a.pems = pems
 		}
-
 	}
 
 	return nil
@@ -116,6 +109,7 @@ func (a *appstate) init(env hermeti.Env) error {
 
 func main() {
 
+	//	do something nice and useful with a panic
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("PANIC:", r)
@@ -123,7 +117,7 @@ func main() {
 	}()
 
 	state := new(appstate)
-	cli := hermeti.NewRealCli[*appstate](state)
+	cli := hermeti.NewRealCli(state)
 	err := state.init(cli.Env)
 	if err != nil {
 		panic(err)

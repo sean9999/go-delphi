@@ -7,5 +7,10 @@ import (
 )
 
 func (a *appstate) nick(env hermeti.Env) {
+
+	if hasPriv := a.pluckPriv(); !hasPriv {
+		fmt.Fprintln(env.ErrStream, "no private key was passed in")
+	}
+
 	fmt.Fprintln(env.OutStream, a.self.Nickname())
 }
