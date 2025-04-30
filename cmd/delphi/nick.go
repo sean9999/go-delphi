@@ -6,7 +6,7 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (a *appstate) nick(env hermeti.Env) {
+func (a *delphiApp) nick(env hermeti.Env) {
 
 	if hasPriv := a.pluckPriv(); !hasPriv {
 		fmt.Fprintln(env.ErrStream, "no private key was passed in")

@@ -9,7 +9,7 @@ import (
 )
 
 // find and return from all PEMs in bag, a public key. return it as such
-func (a *appstate) PluckPeer() (pubkey delphi.Key) {
+func (a *delphiApp) PluckPeer() (pubkey delphi.Key) {
 	_recipientPem := a.pems.Pluck(delphi.Pubkey)
 	if _recipientPem != nil {
 		pubkey = delphi.KeyFromHex(string(_recipientPem.Bytes))
@@ -17,7 +17,7 @@ func (a *appstate) PluckPeer() (pubkey delphi.Key) {
 	return pubkey
 }
 
-func (a *appstate) PluckPlain() *delphi.Message {
+func (a *delphiApp) PluckPlain() *delphi.Message {
 	p := a.pems.Pluck(delphi.PlainMessage)
 	if p == nil {
 		return nil
@@ -31,7 +31,7 @@ func (a *appstate) PluckPlain() *delphi.Message {
 }
 
 // encrypt a PEM-encoded plain message, thereby turning it into an encrypted message
-func (a *appstate) encrypt(env hermeti.Env) {
+func (a *delphiApp) encrypt(env hermeti.Env) {
 
 	//	self
 	hasPriv := a.pluckPriv()

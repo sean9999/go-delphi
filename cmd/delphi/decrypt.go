@@ -9,11 +9,11 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (a *appstate) Info(env hermeti.Env) {
+func (a *delphiApp) Info(env hermeti.Env) {
 	fmt.Fprintln(env.OutStream, a.self.Nickname())
 }
 
-func (a *appstate) decrypt(env hermeti.Env) {
+func (a *delphiApp) decrypt(env hermeti.Env) {
 
 	if len(env.Args) < 3 {
 		fmt.Fprintln(env.ErrStream, "must pass filename arg")

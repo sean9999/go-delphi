@@ -12,8 +12,8 @@ import (
 func TestNick(t *testing.T) {
 
 	//	cli with testing env
-	state := new(appstate)
-	cli := hermeti.NewTestCli[*appstate](state)
+	state := new(delphiApp)
+	cli := hermeti.NewTestCli[*delphiApp](state)
 
 	//	sub-command / args / flags
 	cli.Env.Args = []string{"delphi", "nick"}
@@ -29,7 +29,7 @@ func TestNick(t *testing.T) {
 	}
 	cli.Env.InStream = fd
 
-	state.init(cli.Env)
+	state.Init(cli.Env)
 
 	//	run cat ./testdata/priv1.pem | delphi nick
 	cli.Run()

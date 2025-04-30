@@ -6,6 +6,6 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (a *appstate) verify(env hermeti.Env) {
+func (a *delphiApp) verify(env hermeti.Env) {
 	fmt.Fprintln(env.ErrStream, "not implemented")
 }

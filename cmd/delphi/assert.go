@@ -6,7 +6,7 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (a *appstate) create_assertion(env hermeti.Env) {
+func (a *delphiApp) create_assertion(env hermeti.Env) {
 
 	if !a.pluckPriv() {
 		fmt.Fprintln(env.ErrStream, ErrNoPrivKey)

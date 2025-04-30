@@ -7,7 +7,7 @@ import (
 )
 
 // output pub key
-func (a *appstate) pub(env hermeti.Env) {
+func (a *delphiApp) pub(env hermeti.Env) {
 
 	if hasPriv := a.pluckPriv(); !hasPriv {
 		fmt.Fprintln(env.ErrStream, "no private key was passed in")

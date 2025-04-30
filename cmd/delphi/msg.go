@@ -11,7 +11,7 @@ import (
 )
 
 // take in some data and return a PEM where that data is the body
-func (a *appstate) msg(env hermeti.Env) {
+func (a *delphiApp) msg(env hermeti.Env) {
 
 	if len(env.Args) < 3 {
 		fmt.Fprintln(env.ErrStream, "not enough args")

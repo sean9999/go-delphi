@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -33,44 +34,47 @@ func hasStdin(r io.Reader) (bool, error) {
 	}
 }
 
-type appstate struct {
+type delphiApp struct {
 	self       delphi.Principal
 	subcommand string
 	pems       pemBag
+	inputBuf   io.ReadWriter
 }
 
 // Run runs an *appstate against a hermiti.Env.
-func (a *appstate) Run(env hermeti.Env) {
+func (app *delphiApp) Run(env hermeti.Env) {
 
-	//	a.subcommand is gotten from hermeti.Env.Args
-	switch a.subcommand {
+	//	subcommands come from env.Args
+	switch app.subcommand {
 	case "create":
-		a.create(env)
+		app.create(env)
 	case "pub":
-		a.pub(env)
+		app.pub(env)
 	case "nick":
-		a.nick(env)
+		app.nick(env)
 	case "msg":
-		a.msg(env)
+		app.msg(env)
 	case "encrypt":
-		a.encrypt(env)
+		app.encrypt(env)
 	case "decrypt":
-		a.decrypt(env)
+		app.decrypt(env)
 	case "assert":
-		a.create_assertion(env)
+		app.create_assertion(env)
 	case "verify":
-		a.verify(env)
+		app.verify(env)
 	case "enumerate":
-		a.enumerate(env)
+		app.enumerate(env)
 	case "unwrap":
-		a.unwrap(env)
+		app.unwrap(env)
+	case "echo":
+		app.echo(env)
 	default:
-		fmt.Fprintf(env.ErrStream, "no subcommand called %q\n", a.subcommand)
+		fmt.Fprintf(env.ErrStream, "no subcommand called %q\n", app.subcommand)
 	}
 }
 
-// init initializes an *appstate with defaults globals
-func (a *appstate) init(env hermeti.Env) error {
+// Init initializes a *delphiApp, preparing it for [Run]
+func (app *delphiApp) Init(env hermeti.Env) error {
 
 	var privFile string
 	f := flag.NewFlagSet("fset", flag.ExitOnError)
@@ -78,12 +82,12 @@ func (a *appstate) init(env hermeti.Env) error {
 	f.Parse(env.Args)
 
 	if len(env.Args) >= 2 {
-		a.subcommand = env.Args[1]
+		app.subcommand = env.Args[1]
 	}
 
-	a.pems = make(pemBag)
+	app.pems = make(pemBag)
 
-	switch a.subcommand {
+	switch app.subcommand {
 	default:
 
 		has, err := hasStdin(env.InStream)
@@ -98,9 +102,10 @@ func (a *appstate) init(env hermeti.Env) error {
 			}
 			thispem, remainder := readNextPem(inBytes)
 			for thispem != nil {
-				a.pems[delphi.Subject(thispem.Type)] = append(a.pems[delphi.Subject(thispem.Type)], *thispem)
+				app.pems[delphi.Subject(thispem.Type)] = append(app.pems[delphi.Subject(thispem.Type)], *thispem)
 				thispem, remainder = readNextPem(remainder)
 			}
+			app.inputBuf = bytes.NewBuffer(remainder)
 		}
 	}
 
@@ -116,9 +121,9 @@ func main() {
 		}
 	}()
 
-	state := new(appstate)
+	state := new(delphiApp)
 	cli := hermeti.NewRealCli(state)
-	err := state.init(cli.Env)
+	err := state.Init(cli.Env)
 	if err != nil {
 		panic(err)
 	}

@@ -11,9 +11,13 @@ func readNextPem(b []byte) (p *pem.Block, rest []byte) {
 	return pem.Decode(b)
 }
 
-// show us all the PEMs that have been streamed in.
-// output a message to stderr if some data is not PEM
-func (a *appstate) enumerate(env hermeti.Env) {
+// show us all the PEMs on stdout
+// output non PEM data to stderr
+func (a *delphiApp) enumerate(env hermeti.Env) {
+
+	fmt.Fprintln(env.OutStream, "hello")
+
+	fmt.Fprintf(env.OutStream, "number of pems: %d\n\n", len(a.pems))
 
 	if !a.self.IsZero() {
 		fmt.Fprintln(env.OutStream, "I am ", a.self.Nickname())

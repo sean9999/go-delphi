@@ -20,6 +20,22 @@
             "args": ["encrypt", "<", "${workspaceFolder}/testdata/bitter-frost.pem"]
         },
         {
+            "name": "echo",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/delphi",
+            "args": ["echo", "<", "${workspaceFolder}/testdata/random_stuff.txt"]
+        },
+        {
+            "name": "enumerate",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/delphi",
+            "args": ["enumerate", "<", "${workspaceFolder}/testdata/*"]
+        },
+        {
             "name": "assert",
             "type": "go",
             "request": "launch",
@@ -49,9 +65,9 @@
             "name": "pub",
             "type": "go",
             "request": "launch",
-            "mode": "auto",
+            "mode": "debug",
             "program": "${workspaceFolder}/cmd/delphi",
-            "args": ["--priv", "${workspaceFolder}/testdata/priv1.bin", "pub"]
+            "args": ["pub", "<", "${workspaceFolder}/testdata/damp-breeze.pem"]
         }
     ]
 }
