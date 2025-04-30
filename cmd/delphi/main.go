@@ -90,10 +90,13 @@ func (app *delphiApp) Init(env hermeti.Env) error {
 	switch app.subcommand {
 	default:
 
-		has, err := hasStdin(env.InStream)
-		if err != nil {
-			return fmt.Errorf("could not initialize: %w", err)
-		}
+		//has, err := hasStdin(env.InStream)
+		//if err != nil {
+		//	return fmt.Errorf("could not initialize: %w", err)
+		//}
+
+		has := true
+
 		if has {
 			// read in all pems and keep them in a bag
 			inBytes, readerr := io.ReadAll(env.InStream)
