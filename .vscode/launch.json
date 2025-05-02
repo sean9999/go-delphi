@@ -17,7 +17,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/delphi",
-            "args": ["encrypt", "<", "${workspaceFolder}/testdata/bitter-frost.pem"]
+            "args": ["encrypt", "<", "${workspaceFolder}/stack.pem"]
         },
         {
             "name": "echo",
