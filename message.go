@@ -17,6 +17,7 @@ import (
 
 // the prefix for header keys
 const Keyspace = "delphi"
+const Version = "v1"
 
 var ErrNotImplemented = errors.New("not implemented")
 

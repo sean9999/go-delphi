@@ -23,13 +23,13 @@ func (dr deterministicRand) Read(bs []byte) (int, error) {
 }
 
 func TestCreate(t *testing.T) {
-	state := new(delphiApp)
-	cli := hermeti.NewTestCli[*delphiApp](state)
+	app := new(delphiApp)
+	cli := hermeti.NewTestCli(app)
 
 	cli.Env.Randomness = deterministicRand{}
 
 	cli.Env.Args = []string{"delphi", "create"}
-	state.Init(cli.Env)
+	app.Init(cli.Env)
 	cli.Run()
 
 	output, err := io.ReadAll(cli.Env.OutStream.(io.Reader))

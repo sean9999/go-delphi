@@ -10,9 +10,9 @@ import (
 
 // find and return from all PEMs in bag, a public key. return it as such
 func (a *delphiApp) PluckPeer() (pubkey delphi.Key) {
-	_recipientPem := a.pems.Pluck(delphi.Pubkey)
-	if _recipientPem != nil {
-		pubkey = delphi.KeyFromHex(string(_recipientPem.Bytes))
+	peer := a.pems.Pluck(delphi.Pubkey)
+	if peer != nil {
+		pubkey = delphi.KeyFromHex(string(peer.Bytes))
 	}
 	return pubkey
 }

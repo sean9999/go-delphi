@@ -6,7 +6,11 @@ import (
 	"github.com/sean9999/go-delphi"
 )
 
+// a pemBag is a map of PEMs
 type pemBag map[delphi.Subject][]pem.Block
+
+// a pemSpec encodes rules about how many PEMs of what type exist in a pemBag
+type pemSpec map[delphi.Subject]int
 
 func (p *pemBag) Has(subject delphi.Subject) bool {
 	bag := *p
@@ -29,10 +33,7 @@ func (p *pemBag) Pluck(subject delphi.Subject) *pem.Block {
 	if len(blocks) == 0 {
 		return nil
 	}
-	if len(blocks) == 0 {
-		return nil
-	}
-	priv := blocks[0]
+	pem := blocks[0]
 	bag[subject] = bag[subject][1:]
-	return &priv
+	return &pem
 }

@@ -12,8 +12,8 @@ import (
 func TestPub(t *testing.T) {
 
 	//	cli with testing env
-	state := new(delphiApp)
-	cli := hermeti.NewTestCli[*delphiApp](state)
+	app := new(delphiApp)
+	cli := hermeti.NewTestCli(app)
 	cli.Env.Args = []string{"delphi", "pub"}
 
 	//	mount ../../testdata into memory-backed fs
@@ -27,7 +27,7 @@ func TestPub(t *testing.T) {
 	}
 	cli.Env.InStream = fd
 
-	state.Init(cli.Env)
+	app.Init(cli.Env)
 
 	//	run cat ./testdata/priv1.pem | delphi pub
 	cli.Run()

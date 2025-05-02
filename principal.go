@@ -210,7 +210,8 @@ func (p Principal) MarhsalPEM() (pem.Block, error) {
 	blk := pem.Block{
 		Type: "DELPHI PRIVATE KEY",
 		Headers: map[string]string{
-			fmt.Sprintf("%s/%s", Keyspace, "nick"): p.Nickname(),
+			fmt.Sprintf("%s/%s", Keyspace, "nick"):    p.Nickname(),
+			fmt.Sprintf("%s/%s", Keyspace, "version"): Version,
 		},
 		Bytes: p.Bytes(),
 	}

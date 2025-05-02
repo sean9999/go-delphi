@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/pem"
 	"fmt"
 
+	"github.com/sean9999/go-delphi"
 	"github.com/sean9999/hermeti"
 )
 
@@ -14,5 +16,19 @@ func (a *delphiApp) pub(env hermeti.Env) {
 	}
 
 	pubkey := a.self.PublicKey()
-	fmt.Fprintln(env.OutStream, pubkey.ToHex())
+
+	p := pem.Block{
+		Type: string(delphi.Pubkey),
+		Headers: map[string]string{
+			"nick": pubkey.Nickname(),
+		},
+		Bytes: pubkey.Bytes(),
+	}
+
+	err := pem.Encode(env.OutStream, &p)
+	if err != nil {
+		fmt.Fprintln(env.ErrStream, err)
+		return
+	}
+
 }

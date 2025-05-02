@@ -12,8 +12,8 @@ import (
 func TestNick(t *testing.T) {
 
 	//	cli with testing env
-	state := new(delphiApp)
-	cli := hermeti.NewTestCli[*delphiApp](state)
+	app := new(delphiApp)
+	cli := hermeti.NewTestCli(app)
 
 	//	sub-command / args / flags
 	cli.Env.Args = []string{"delphi", "nick"}
@@ -29,7 +29,7 @@ func TestNick(t *testing.T) {
 	}
 	cli.Env.InStream = fd
 
-	state.Init(cli.Env)
+	app.Init(cli.Env)
 
 	//	run cat ./testdata/priv1.pem | delphi nick
 	cli.Run()
@@ -44,8 +44,8 @@ func TestNick(t *testing.T) {
 	assert.NotEqual(t, "divine-cloud\n", string(output))
 
 	//	Principal.Nickname() should be the same as Peer.Nickname()
-	nick1 := state.self.Nickname()
-	nick2 := state.self.PublicKey().Nickname()
+	nick1 := app.self.Nickname()
+	nick2 := app.self.PublicKey().Nickname()
 	assert.Equal(t, nick1, nick2)
 
 }
