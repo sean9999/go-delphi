@@ -16,16 +16,18 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
+            "console": "integratedTerminal",
             "program": "${workspaceFolder}/cmd/delphi",
-            "args": ["encrypt", "<", "${workspaceFolder}/stack.pem"]
+            "args": ["encrypt", "<", "${workspaceFolder}/testdata/stack.pem"]
         },
         {
             "name": "echo",
             "type": "go",
             "request": "launch",
             "mode": "debug",
+            "console": "externalTerminal",
             "program": "${workspaceFolder}/cmd/delphi",
-            "args": ["echo", "<", "${workspaceFolder}/testdata/random_stuff.txt"]
+            "args": ["echo", "<", "${workspaceFolder}/testdata/fortune_anonymous.pem"]
         },
         {
             "name": "enumerate",

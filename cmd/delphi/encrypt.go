@@ -12,7 +12,8 @@ import (
 func (a *delphiApp) PluckPeer() (pubkey delphi.Key) {
 	peer := a.pems.Pluck(delphi.Pubkey)
 	if peer != nil {
-		pubkey = delphi.KeyFromHex(string(peer.Bytes))
+		//pubkey = delphi.KeyFromHex(string(peer.Bytes))
+		pubkey = delphi.KeyFromBytes(peer.Bytes)
 	}
 	return pubkey
 }

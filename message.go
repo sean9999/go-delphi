@@ -222,6 +222,7 @@ func (m *Message) FromPEM(p pem.Block) error {
 	case string(EncryptedMessage):
 		m.CipherText = p.Bytes
 	case string(PlainMessage):
+		m.PlainText = p.Bytes
 	default:
 		//	any type other than EncryptedMessage is treated as plain text.
 		m.PlainText = p.Bytes
