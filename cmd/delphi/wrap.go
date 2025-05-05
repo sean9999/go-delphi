@@ -7,8 +7,8 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-// take in some data and return a PEM where that data is the body
-func (a *delphiApp) msg(env hermeti.Env) {
+// take in some data and wrap it in a PEM with type "DELPHI PLAIN MESSAGE"
+func (a *delphiApp) wrap(env hermeti.Env) {
 
 	body := a.inBuff.Bytes()
 

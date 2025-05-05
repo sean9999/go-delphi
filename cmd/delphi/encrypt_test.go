@@ -29,12 +29,11 @@ func TestEncrypt(t *testing.T) {
 	cli.Env.Mount(subfs, "./testdata")
 
 	//	pipe recipient, self, and message into stdin
-	fd, err := cli.Env.Filesystem.Open("./testdata/stack.pem")
+
+	err := cli.Env.PipeInFile("./testdata/stack.pem")
 	if err != nil {
 		t.Fatal(err)
 	}
-	cli.Env.PipeIn(fd)
-
 	app.Init(cli.Env)
 
 	//	run cat testdata/stack.pem | delphi encrypt

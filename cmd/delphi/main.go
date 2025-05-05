@@ -27,8 +27,8 @@ func (app *delphiApp) Run(env hermeti.Env) {
 		app.pub(env)
 	case "nick":
 		app.nick(env)
-	case "msg":
-		app.msg(env)
+	case "wrap":
+		app.wrap(env)
 	case "encrypt":
 		app.encrypt(env)
 	case "decrypt":

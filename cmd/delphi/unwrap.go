@@ -1,10 +1,10 @@
 package main
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 
+	"github.com/sean9999/go-delphi"
 	"github.com/sean9999/hermeti"
 )
 
@@ -16,16 +16,13 @@ func (a *delphiApp) unwrap(env hermeti.Env) {
 	}
 
 	for subj, pems := range a.pems {
-		fmt.Fprintln(env.OutStream, subj)
 		for _, pem := range pems {
-			var dst []byte
-			_, err := base64.StdEncoding.Decode(dst, pem.Bytes)
-			if err != nil {
-				fmt.Fprintln(env.ErrStream, err)
-			} else {
-				fmt.Fprintln(env.OutStream, string(dst))
+			switch subj {
+			case delphi.PlainMessage:
+				fmt.Fprintf(env.OutStream, "\n%s\n%s\n", pem.Type, pem.Bytes)
+			default:
+				fmt.Fprintf(env.OutStream, "\n%s\n%x\n", pem.Type, pem.Bytes)
 			}
 		}
 	}
-
 }

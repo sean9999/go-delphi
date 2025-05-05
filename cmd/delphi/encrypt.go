@@ -64,4 +64,5 @@ func (a *delphiApp) encrypt(env hermeti.Env) {
 		return
 	}
 	fmt.Fprintln(env.OutStream, msg)
+
 }

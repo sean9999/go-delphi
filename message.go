@@ -253,8 +253,13 @@ func (m *Message) Read(b []byte) (int, error) {
 func (m *Message) Write(b []byte) (int, error) {
 	pm, _ := pem.Decode(b)
 	m.Subject = Subject(pm.Type)
-	m.PlainText = pm.Bytes
-	m.Headers = pm.Headers
+	err := m.FromPEM(*pm)
+	if err != nil {
+		return 0, err
+	}
+
+	//m.PlainText = pm.Bytes
+	//m.Headers = pm.Headers
 	return len(b), io.EOF
 }
 

@@ -110,10 +110,11 @@ func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}
 
-	plainTxt, err := decrypt(sharedSec, msg.CipherText, msg.Nonce[:], binHeaders)
+	plainTxt, err := decrypt(sharedSec, msg.CipherText, msg.Nonce.Bytes(), binHeaders)
 	if err != nil {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}
+	msg.Subject = PlainMessage
 	msg.PlainText = plainTxt
 	msg.CipherText = nil
 	return nil
