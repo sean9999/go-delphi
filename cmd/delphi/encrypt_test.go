@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/pem"
 	"testing"
@@ -20,10 +19,6 @@ func TestEncrypt(t *testing.T) {
 	cli.Env.Args = []string{"delphi", "encrypt"}
 	cli.Env.Randomness = rand.Reader
 
-	//	capture output
-	buf := new(bytes.Buffer)
-	cli.Env.OutStream = buf
-
 	//	mount ../../testdata into memory-backed fs
 	subfs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
 	cli.Env.Mount(subfs, "./testdata")
@@ -34,10 +29,11 @@ func TestEncrypt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	app.Init(cli.Env)
 
 	//	run cat testdata/stack.pem | delphi encrypt
 	cli.Run()
+
+	buf, _ := cli.OutStream()
 
 	assert.Contains(t, buf.String(), "DELPHI ENCRYPTED MESSAGE")
 

@@ -20,14 +20,13 @@ func TestExample(t *testing.T) {
 	//	create a message for bob, from alice
 	msg := delphi.NewMessage(rand.Reader, delphi.PlainMessage, sentence)
 	msg.SenderKey = alice.PublicKey()
-	msg.RecipientKey = bob.PublicKey()
 
 	//	add some metadata (this becomes AAD)
 	msg.Headers["foo"] = "bar"
 	msg.Headers["bing"] = "bat"
 
 	//	encrypt message
-	err := msg.Encrypt(rand.Reader, alice, nil)
+	err := msg.Encrypt(rand.Reader, alice, bob.PublicKey(), nil)
 	assert.NoError(t, err)
 
 	//	decrpyt message

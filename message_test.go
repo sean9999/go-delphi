@@ -17,12 +17,11 @@ func TestEncrypt(t *testing.T) {
 	bob := NewPrincipal(randy)
 	msg := NewMessage(randy, "DELPHI PLAIN MESSAGE", sentence)
 	msg.SenderKey = alice.PublicKey()
-	msg.RecipientKey = bob.PublicKey()
 
 	msg.Headers["foo"] = "bar"
 	msg.Headers["bing"] = "bat"
 
-	err := msg.Encrypt(randy, alice, nil)
+	err := msg.Encrypt(randy, alice, bob.PublicKey(), nil)
 	assert.NoError(t, err)
 	err = bob.Decrypt(msg, nil)
 	assert.NoError(t, err)
@@ -64,8 +63,7 @@ func TestPEMIdempotent(t *testing.T) {
 		them := NewPrincipal(randy)
 
 		msg := me.ComposeMessage(randy, sentence)
-		msg.RecipientKey = them.PublicKey()
-		msg.Encrypt(randy, me, nil)
+		msg.Encrypt(randy, me, them.PublicKey(), nil)
 		assert.Equal(t, EncryptedMessage, msg.Subject)
 
 		p1 := msg.ToPEM()
@@ -87,12 +85,10 @@ func TestEncrypt_No_Recipient(t *testing.T) {
 
 	sentence := []byte("hello world")
 	alice := NewPrincipal(randy)
-	//bob := NewPrincipal(randy)
 	msg := NewMessage(randy, PlainMessage, sentence)
 	msg.SenderKey = alice[0]
-	//msg.to = bob[0]
-
-	err := msg.Encrypt(randy, alice, nil)
+	noRecipient := NewKey(nil)
+	err := msg.Encrypt(randy, alice, noRecipient, nil)
 	assert.ErrorIs(t, err, ErrDelphi)
 	assert.ErrorIs(t, err, ErrBadKey)
 

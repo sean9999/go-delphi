@@ -164,6 +164,9 @@ func NewSubKey(randy io.Reader) subKey {
 }
 
 func NewKey(randy io.Reader) Key {
+	if randy == nil {
+		return Key{}
+	}
 	return Key{NewSubKey(randy), NewSubKey(randy)}
 }
 

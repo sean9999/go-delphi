@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"testing"
 
 	"github.com/sean9999/hermeti"
@@ -21,23 +20,17 @@ func TestPub(t *testing.T) {
 	cli.Env.Mount(subfs, "./testdata")
 
 	//	read priv1.pem into stdin
-	fd, err := cli.Env.Filesystem.Open("./testdata/priv1.pem")
+	fd, err := cli.Env.Filesystem.Open("./testdata/bitter-frost.pem")
 	if err != nil {
 		t.Fatal(err)
 	}
 	cli.Env.InStream = fd
 
-	app.Init(cli.Env)
-
-	//	run cat ./testdata/priv1.pem | delphi pub
+	//	run cat ./testdata/bitter-frost.pem | delphi pub
 	cli.Run()
 
-	//	capture output
-	output, err := io.ReadAll(cli.Env.OutStream.(io.Reader))
-	if err != nil {
-		t.Error(err)
-	}
+	o, _ := cli.OutStream()
 
-	assert.Equal(t, "552610140110ff8aff154a5692c590ad636a900e1174db2e7547d6a3a0f4492697989199f98249fba3032b9434310adbda037e7753a2caf1c69dce3fadab5d3f\n", string(output))
+	assert.Contains(t, o.String(), "GdcBKea7s3wQfGLhYCGzQRbIdZVQi8USkpdXLgFu2CNW")
 
 }

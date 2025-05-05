@@ -56,7 +56,7 @@ func (p *Principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []b
 }
 
 // Encrypt() encrypts a [Message]
-func (p *Principal) Encrypt(randy io.Reader, msg *Message, opts any) error {
+func (p *Principal) Encrypt(randy io.Reader, msg *Message, recipient Key, opts any) error {
 
 	if msg.Encrypted() {
 		return fmt.Errorf("%w: already encrypted", ErrDelphi)
@@ -64,7 +64,12 @@ func (p *Principal) Encrypt(randy io.Reader, msg *Message, opts any) error {
 	if !msg.Plain() {
 		return fmt.Errorf("%w: there is no plain text to encrypt", ErrDelphi)
 	}
+	if recipient.IsZero() {
+		return ErrBadKey
+	}
 
+	msg.SenderKey = p.PublicKey()
+	msg.RecipientKey = recipient
 	if msg.RecipientKey.IsZero() {
 		return fmt.Errorf("%w: recipient: %w", ErrDelphi, ErrBadKey)
 	}
@@ -77,12 +82,12 @@ func (p *Principal) Encrypt(randy io.Reader, msg *Message, opts any) error {
 	msg.ensureNonce(randy)
 	msg.Eph = eph
 
-	binHeaders, err := msg.Headers.MarshalBinary()
+	aad, err := msg.Headers.MarshalBinary()
 	if err != nil {
 		return err
 	}
 
-	ciph, err := encrypt(sec, msg.PlainText, msg.Nonce.Bytes(), binHeaders)
+	ciph, err := encrypt(sec, msg.PlainText, msg.Nonce.Bytes(), aad)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrDelphi, err)
 	}
@@ -105,12 +110,14 @@ func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}
 
-	binHeaders, err := msg.Headers.MarshalBinary()
+	aad, err := msg.Headers.MarshalBinary()
 	if err != nil {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}
 
-	plainTxt, err := decrypt(sharedSec, msg.CipherText, msg.Nonce.Bytes(), binHeaders)
+	// aad := []byte("hello")
+
+	plainTxt, err := decrypt(sharedSec, msg.CipherText, msg.Nonce.Bytes(), aad)
 	if err != nil {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}

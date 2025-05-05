@@ -41,8 +41,6 @@ func (app *delphiApp) Run(env hermeti.Env) {
 		app.enumerate(env)
 	case "unwrap":
 		app.unwrap(env)
-	case "echo":
-		app.echo(env)
 	default:
 		fmt.Fprintf(env.ErrStream, "no subcommand called %q\n", app.subcommand)
 	}

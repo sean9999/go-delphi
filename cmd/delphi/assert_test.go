@@ -29,15 +29,9 @@ func TestAssert(t *testing.T) {
 	cli.Env.Mount(subfs, "./testdata")
 
 	//	read bitter-frost into stdin
-	fd, err := cli.Env.Filesystem.Open("./testdata/bitter-frost.pem")
-	if err != nil {
-		t.Fatal(err)
-	}
-	cli.Env.InStream = fd
+	cli.Env.PipeInFile("./testdata/bitter-frost.pem")
 
-	app.Init(cli.Env)
-
-	//	run cat ./testdata/priv1.pem | delphi assert
+	//	run cat ./testdata/bitter-frost.pem | delphi assert
 	cli.Run()
 
 	assert.Contains(t, string(buf.Bytes()), "ASSERTION")
@@ -48,7 +42,11 @@ func TestAssert(t *testing.T) {
 
 	//	msg from pem
 	msg := new(delphi.Message)
-	err = msg.FromPEM(*pem)
+	err := msg.FromPEM(*pem)
+	assert.NoError(t, err)
+	if err != nil {
+		t.Fail()
+	}
 
 	assert.Equal(t, delphi.Assertion, msg.Subject)
 

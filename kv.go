@@ -20,7 +20,7 @@ func (kv KV) Get(keyspace string, key string) string {
 }
 
 func (kv KV) MarshalBinary() ([]byte, error) {
-	lines := make([]string, 0, len(kv)*2)
+	lines := make([]string, 0)
 	for k, v := range kv.LexicalOrder() {
 		lines = append(lines, k)
 		lines = append(lines, v)
@@ -41,6 +41,7 @@ func (kv *KV) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
+// LexicolOrder ranges through a KV in lexical order
 func (kv KV) LexicalOrder() iter.Seq2[string, string] {
 	keys := make([]string, 0, len(kv))
 	for k, _ := range kv {

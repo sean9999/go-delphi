@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"testing"
 
 	"github.com/sean9999/hermeti"
@@ -22,26 +21,19 @@ func TestNick(t *testing.T) {
 	subfs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
 	cli.Env.Mount(subfs, "./testdata")
 
-	//	read priv1.pem into stdin
-	fd, err := cli.Env.Filesystem.Open("./testdata/priv1.pem")
-	if err != nil {
-		t.Fatal(err)
-	}
-	cli.Env.InStream = fd
+	//	read bitter-frost.pem into stdin
+	err := cli.Env.PipeInFile("./testdata/bitter-frost.pem")
 
-	app.Init(cli.Env)
-
-	//	run cat ./testdata/priv1.pem | delphi nick
 	cli.Run()
 
 	//	capture output
-	output, err := io.ReadAll(cli.Env.OutStream.(io.Reader))
+	output, err := cli.OutStream()
 	if err != nil {
 		t.Error(err)
 	}
 
 	//	divine-cloud is the nickname of the all-zero public key.
-	assert.NotEqual(t, "divine-cloud\n", string(output))
+	assert.NotEqual(t, "divine-cloud\n", output.String())
 
 	//	Principal.Nickname() should be the same as Peer.Nickname()
 	nick1 := app.self.Nickname()

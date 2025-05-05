@@ -55,10 +55,9 @@ func (a *delphiApp) encrypt(env hermeti.Env) {
 		return
 	}
 
-	msg.RecipientKey = recipient
 	msg.SenderKey = a.self.PublicKey()
 
-	err := a.self.Encrypt(env.Randomness, msg, nil)
+	err := a.self.Encrypt(env.Randomness, msg, recipient, nil)
 	if err != nil {
 		fmt.Fprintln(env.ErrStream, err)
 		return

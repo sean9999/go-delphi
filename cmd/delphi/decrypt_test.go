@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/rand"
 	"testing"
 
@@ -19,29 +18,32 @@ func TestDecrypt(t *testing.T) {
 	cli.Env.Args = []string{"delphi", "decrypt"}
 	cli.Env.Randomness = rand.Reader
 
-	//	capture output
-	buf := new(bytes.Buffer)
-	cli.Env.OutStream = buf
-
 	//	mount ../../testdata into memory-backed fs
 	subfs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
 	cli.Env.Mount(subfs, "./testdata")
 
 	//	pipe in priv key and message
-	cli.Env.PipeInFile("testdata/grass-to-frost.pem")
-	cli.Env.PipeInFile("testdata/bitter-frost.pem")
+	cli.Env.PipeInFile("testdata/falling-grass.pem")
+	cli.Env.PipeInFile("testdata/message.cypher.pem")
 
-	app.Init(cli.Env)
 	cli.Run()
+
+	buf, err := cli.OutStream()
+	assert.NoError(t, err)
 
 	//	convert output back into Message
 	msg := new(delphi.Message)
+
+	if buf.Len() == 0 {
+		assert.Fail(t, "nil output buffer")
+	}
+
 	i, _ := msg.Write(buf.Bytes())
 	assert.Greater(t, i, 0)
 
-	assert.Contains(t, string(msg.PlainText), "Callimachus")
-	assert.Equal(t, msg.RecipientKey.Nickname(), "bitter-frost")
-	assert.Equal(t, msg.SenderKey.Nickname(), "falling-grass")
+	assert.Contains(t, string(msg.PlainText), "GNP growth projections")
+	assert.Equal(t, msg.RecipientKey.Nickname(), "falling-grass")
+	assert.Equal(t, msg.SenderKey.Nickname(), "bitter-frost")
 	assert.NotNil(t, msg.Nonce)
 	assert.NotNil(t, msg.Eph)
 

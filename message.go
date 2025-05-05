@@ -36,7 +36,7 @@ type Message struct {
 	Sig          []byte  `msgpack:"sig" json:"sig"`
 }
 
-// RecipientEncryption() returns the recipient as a public encryption key
+// RecipientEncryption() returns the recipient as a public encryption key (ECDH)
 func (m *Message) RecipientEncryption() crypto.PublicKey {
 	k, err := ecdh.X25519().NewPublicKey(m.RecipientKey.Encryption().Bytes())
 	if err != nil {
@@ -68,7 +68,7 @@ func (m *Message) Signatory() crypto.PublicKey {
 	return k
 }
 
-// ensureNonce ensures the Message has a [Nonce]
+// ensureNonce ensures the Message has a [Nonce], and returns it.
 func (m *Message) ensureNonce(randy io.Reader) Nonce {
 	if !m.Nonce.IsZero() {
 		return m.Nonce
@@ -158,7 +158,7 @@ func (m *Message) ToPEM() pem.Block {
 		hdrs["eph"] = base64.StdEncoding.EncodeToString(m.Eph)
 	}
 	if !m.Nonce.IsZero() {
-		hdrs["nonce"] = base64.StdEncoding.EncodeToString(m.Nonce[:])
+		hdrs["nonce"] = base64.StdEncoding.EncodeToString(m.Nonce.Bytes())
 	}
 	if len(m.Sig) > 0 {
 		hdrs["sig"] = base64.StdEncoding.EncodeToString(m.Sig)
@@ -174,9 +174,7 @@ func (m *Message) ToPEM() pem.Block {
 
 func (m *Message) FromPEM(p pem.Block) error {
 
-	//m.Headers = make(KV)
-
-	m.Headers = p.Headers
+	m.Headers = make(KV)
 
 	//	TODO: retire this. These values are now stored in the body. We don't want to overload PEM headers. They should stay light.
 	for k, v := range p.Headers {
@@ -251,15 +249,18 @@ func (m *Message) Read(b []byte) (int, error) {
 }
 
 func (m *Message) Write(b []byte) (int, error) {
+	if m == nil {
+		return 0, io.EOF
+	}
 	pm, _ := pem.Decode(b)
+	if pm == nil {
+		return 0, errors.New("nil message")
+	}
 	m.Subject = Subject(pm.Type)
 	err := m.FromPEM(*pm)
 	if err != nil {
 		return 0, err
 	}
-
-	//m.PlainText = pm.Bytes
-	//m.Headers = pm.Headers
 	return len(b), io.EOF
 }
 
@@ -344,9 +345,14 @@ func (msg *Message) Verify() bool {
 }
 
 // msg.Encrypt(Encrypter) is another way of doing encrypter.Encrypt(*Message)
-func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, opts EncrypterOpts) error {
+func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, recipient Peer, opts EncrypterOpts) error {
+
+	if recipient.IsZero() {
+		return fmt.Errorf("no recipient key. %w. %w", ErrBadKey, ErrDelphi)
+	}
+
 	msg.ensureNonce(randy)
-	err := encrypter.Encrypt(randy, msg, opts)
+	err := encrypter.Encrypt(randy, msg, recipient, opts)
 	if err == nil {
 		msg.Subject = EncryptedMessage
 	} else {
