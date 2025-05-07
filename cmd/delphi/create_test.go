@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/pem"
 	"io"
 	"testing"
 
@@ -10,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// deterministicRand is a deterministic source of randomness.
+// In other words, not random at all.
 type deterministicRand struct{}
 
 func (dr deterministicRand) Read(bs []byte) (int, error) {
@@ -23,29 +24,23 @@ func (dr deterministicRand) Read(bs []byte) (int, error) {
 }
 
 func TestCreate(t *testing.T) {
+
 	app := new(delphiApp)
 	cli := hermeti.NewTestCli(app)
-
 	cli.Env.Randomness = deterministicRand{}
-
 	cli.Env.Args = []string{"delphi", "create"}
-	app.Init(cli.Env)
 	cli.Run()
 
-	output, err := io.ReadAll(cli.Env.OutStream.(io.Reader))
+	output, err := cli.OutStream()
 	if err != nil {
 		t.Error(err)
 	}
 
 	msg := new(delphi.Message)
-	p, _ := pem.Decode(output)
+	_, err = io.Copy(msg, output)
+	assert.ErrorIs(t, err, io.EOF)
 
-	err = msg.FromPEM(*p)
-	if err != nil {
-		t.Error(err)
-	}
-
-	assert.Equal(t, "DELPHI PRIVATE KEY", p.Type)
+	assert.Equal(t, delphi.Subject("DELPHI PRIVATE KEY"), msg.Subject)
 	assert.Equal(t, "falling-dawn", msg.Headers.Get(delphi.Keyspace, "nick"))
 
 }

@@ -56,6 +56,8 @@ func (app *delphiApp) Init(env hermeti.Env) error {
 	app.pems = make(pemBag)
 
 	switch app.subcommand {
+	case "create":
+		// don't assume stdin
 	default:
 
 		// read in all pems and keep them in a bag
@@ -85,12 +87,8 @@ func main() {
 		}
 	}()
 
-	state := new(delphiApp)
-	cli := hermeti.NewRealCli(state)
-	err := state.Init(cli.Env)
-	if err != nil {
-		panic(err)
-	}
+	app := new(delphiApp)
+	cli := hermeti.NewRealCli(app)
 	cli.Run()
 
 }
