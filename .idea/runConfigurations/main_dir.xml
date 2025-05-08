@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="go test go-delphi" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+  <configuration default="false" name="main dir" type="GoTestRunConfiguration" factoryName="Go Test">
     <module name="go-delphi" />
     <working_directory value="$PROJECT_DIR$" />
     <kind value="DIRECTORY" />

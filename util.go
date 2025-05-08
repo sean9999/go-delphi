@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
-const GLOBAL_SALT = "oracle/v1"
+const GlobalSalt = "oracle/v1"
 
 var ErrDelphi = errors.New("delphi")
 
@@ -49,7 +49,7 @@ func generateSharedSecret(counterPartyPubKey []byte, randomness io.Reader) (shar
 	copy(salt[len(ephemeralPubKey):], counterPartyPubKey)
 
 	//	derive a symetric key. This is our shared secret
-	h := hkdf.New(sha256.New, secretScalar, salt, []byte(GLOBAL_SALT))
+	h := hkdf.New(sha256.New, secretScalar, salt, []byte(GlobalSalt))
 	sharedSecret = make([]byte, chacha20poly1305.KeySize)
 	if _, err := io.ReadFull(h, sharedSecret); err != nil {
 		return nil, nil, err
@@ -72,7 +72,7 @@ func extractSharedSecret(ephemeralPubKey, recipientPrivKey, recipientPubKey []by
 	copy(salt[:len(ephemeralPubKey)], ephemeralPubKey)
 	copy(salt[len(ephemeralPubKey):], recipientPubKey)
 
-	h := hkdf.New(sha256.New, sharedScalar, salt, []byte(GLOBAL_SALT))
+	h := hkdf.New(sha256.New, sharedScalar, salt, []byte(GlobalSalt))
 	sharedSecret := make([]byte, chacha20poly1305.KeySize)
 	if _, err := io.ReadFull(h, sharedSecret); err != nil {
 		return nil, err

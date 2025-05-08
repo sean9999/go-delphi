@@ -34,7 +34,7 @@ func (app *delphiApp) Run(env hermeti.Env) {
 	case "decrypt":
 		app.decrypt(env)
 	case "assert":
-		app.create_assertion(env)
+		app.createAssertion(env)
 	case "verify":
 		app.verify(env)
 	case "enumerate":

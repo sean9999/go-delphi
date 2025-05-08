@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/pem"
 	"testing"
@@ -20,13 +19,9 @@ func TestAssert(t *testing.T) {
 	cli.Env.Args = []string{"delphi", "assert"}
 	cli.Env.Randomness = rand.Reader
 
-	//	capture output
-	buf := new(bytes.Buffer)
-	cli.Env.OutStream = buf
-
 	//	mount ../../testdata into memory-backed fs
-	subfs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
-	err := cli.Env.Mount(subfs, "./testdata")
+	subFs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
+	err := cli.Env.Mount(subFs, "./testdata")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,9 +35,14 @@ func TestAssert(t *testing.T) {
 	//	run cat ./testdata/bitter-frost.pem | delphi assert
 	cli.Run()
 
+	buf, err := cli.OutStream()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Contains(t, string(buf.Bytes()), "ASSERTION")
 
-	//	thisPem from bytes
+	//	pem from bytes
 	thisPem, _ := pem.Decode(buf.Bytes())
 	assert.NotNil(t, thisPem)
 
