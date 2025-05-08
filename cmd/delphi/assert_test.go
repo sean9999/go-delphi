@@ -26,23 +26,29 @@ func TestAssert(t *testing.T) {
 
 	//	mount ../../testdata into memory-backed fs
 	subfs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
-	cli.Env.Mount(subfs, "./testdata")
+	err := cli.Env.Mount(subfs, "./testdata")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	//	read bitter-frost into stdin
-	cli.Env.PipeInFile("./testdata/bitter-frost.pem")
+	err = cli.Env.PipeInFile("./testdata/bitter-frost.pem")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	//	run cat ./testdata/bitter-frost.pem | delphi assert
 	cli.Run()
 
 	assert.Contains(t, string(buf.Bytes()), "ASSERTION")
 
-	//	pem from bytes
-	pem, _ := pem.Decode(buf.Bytes())
-	assert.NotNil(t, pem)
+	//	thisPem from bytes
+	thisPem, _ := pem.Decode(buf.Bytes())
+	assert.NotNil(t, thisPem)
 
-	//	msg from pem
+	//	msg from thisPem
 	msg := new(delphi.Message)
-	err := msg.FromPEM(*pem)
+	err = msg.FromPEM(*thisPem)
 	assert.NoError(t, err)
 	if err != nil {
 		t.Fail()

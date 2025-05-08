@@ -17,7 +17,10 @@ func TestPub(t *testing.T) {
 
 	//	mount ../../testdata into memory-backed fs
 	subfs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
-	cli.Env.Mount(subfs, "./testdata")
+	err := cli.Env.Mount(subfs, "./testdata")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	//	read priv1.pem into stdin
 	fd, err := cli.Env.Filesystem.Open("./testdata/bitter-frost.pem")
