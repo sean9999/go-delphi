@@ -8,7 +8,7 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-// find and return from all PEMs in bag, a public key. return it as such
+// PluckPeer plucks out a public key from the [pemBag].
 func (a *delphiApp) PluckPeer() (pubkey delphi.Key) {
 	peer := a.pems.Pluck(delphi.Pubkey)
 	if peer != nil {
@@ -18,6 +18,7 @@ func (a *delphiApp) PluckPeer() (pubkey delphi.Key) {
 	return pubkey
 }
 
+// PluckPlain plucks out a plain message from the [pemBag].
 func (a *delphiApp) PluckPlain() *delphi.Message {
 	p := a.pems.Pluck(delphi.PlainMessage)
 	if p == nil {

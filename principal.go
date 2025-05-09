@@ -23,17 +23,17 @@ type CryptOpts struct {
 	AAED  []byte
 }
 
-// a Principal contains cryptographic key material
+// A Principal contains cryptographic key material
 // and can sign, verify, encrypt, and decrypt [Message]s.
 type Principal = KeyPair
 
-// Sign() signs a digest
+// Sign signs a digest
 func (p *Principal) Sign(_ io.Reader, digest []byte, _ crypto.SignerOpts) ([]byte, error) {
 	sig := ed25519.Sign(p.privateSigningKey(), digest)
 	return sig, nil
 }
 
-// Assert() creates a signed assertion
+// Assert creates a signed assertion
 func (p *Principal) Assert(randy io.Reader) (*Message, error) {
 
 	body := []byte("I assert that I am me.")
@@ -49,13 +49,13 @@ func (p *Principal) Assert(randy io.Reader) (*Message, error) {
 
 }
 
-// Verify() verifies a signature
+// Verify verifies a signature
 func (p *Principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []byte) bool {
 	edpub := ed25519.PublicKey(delphiPubKey.(Key).Signing().Bytes())
 	return ed25519.Verify(edpub, digest, sig)
 }
 
-// Encrypt() encrypts a [Message]
+// Encrypt encrypts a [Message]
 func (p *Principal) Encrypt(randy io.Reader, msg *Message, recipient Key, opts any) error {
 
 	if msg.Encrypted() {
@@ -102,7 +102,7 @@ func (p *Principal) Encrypt(randy io.Reader, msg *Message, recipient Key, opts a
 	return nil
 }
 
-// Decrypt() decrypts a [Message]
+// Decrypt decrypts a [Message]
 func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 
 	sharedSec, err := extractSharedSecret(msg.Eph, p.privateEncryptionKey().Bytes(), p.publicEncryptionKey().Bytes())
@@ -114,8 +114,6 @@ func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 	if err != nil {
 		return fmt.Errorf("could not decrypt: %w", err)
 	}
-
-	// aad := []byte("hello")
 
 	plainTxt, err := decrypt(sharedSec, msg.CipherText, msg.Nonce.Bytes(), aad)
 	if err != nil {
@@ -155,7 +153,7 @@ func (p *Principal) PrivateKey() Key {
 	return p[1]
 }
 
-func (p *Principal) Public() crypto.PublicKey {
+func (p Principal) Public() crypto.PublicKey {
 	return p[0]
 }
 
@@ -178,14 +176,14 @@ func (p *Principal) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-// NewPrincipal() creates a new [Principal]
+// NewPrincipal creates a new [Principal]
 func NewPrincipal(randy io.Reader) *Principal {
 	kp := NewKeyPair(randy)
 	p := Principal(kp)
 	return &p
 }
 
-// From() re-hydrates a [Principal] from a byte slice
+// From re-hydrates a [Principal] from a byte slice
 func (Principal) From(b []byte) (Principal, error) {
 	if len(b) < 4*subKeySize {
 		return Principal{}, fmt.Errorf("%w: not enough bytes. Expected %d but got %d", ErrBadKey, 4*subKeySize, len(b))
@@ -198,14 +196,15 @@ func (Principal) From(b []byte) (Principal, error) {
 	return *p, nil
 }
 
+// A Nickname is a very memorable string for humans only. It has weak uniqueness that is good enough for some uses.
 func (p Principal) Nickname() string {
 	return p.PublicKey().Nickname()
 }
 
-// a Peer is the public portion of a Principal, which is a public-private key pair
+// A Peer is the public portion of a Principal, which is a public-private key pair.
 type Peer = Key
 
-// a Nickname is a very memorable string for humans only. Not to be used for actual uniqueness.
+// A Nickname is a very memorable string for humans only. It has weak uniqueness that is good enough for some uses.
 func (p Peer) Nickname() string {
 	seed := p.ToInt64()
 	nameGenerator := namegenerator.NewNameGenerator(seed)
