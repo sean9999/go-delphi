@@ -7,8 +7,8 @@ github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e h1:XmA6L9IP
 github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e/go.mod h1:AFIo+02s+12CEg8Gzz9kzhCbmbq6JcKNrhHffCGA9z4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/sean9999/hermeti v0.1.1 h1:qq1iK0IEpKcQhEew9Q3/C23vLex5u1ZIOlKiZoT5dH8=
-github.com/sean9999/hermeti v0.1.1/go.mod h1:TaERtyaqhd1DmzasV59XB3KAOPFVEm6yMtAG3lpC/ZY=
+github.com/sean9999/hermeti v0.4.0 h1:DvKJqzy9GtkXAa3p2ulvrm0c/MHo8uu0mAoFV719Hbw=
+github.com/sean9999/hermeti v0.4.0/go.mod h1:TaERtyaqhd1DmzasV59XB3KAOPFVEm6yMtAG3lpC/ZY=
 github.com/sean9999/pear v0.0.5 h1:IHOYxBo1KymPjyN00EIedY2Ifa5XAZNy4eWgcmI6ssc=
 github.com/sean9999/pear v0.0.5/go.mod h1:eiFHU9C1yi9faFKkW//79maetAugdn7UUup5Ckb0pes=
 github.com/spf13/afero v1.12.0 h1:UcOPyRBYczmFn6yvphxkn9ZEOY65cpwGKb5mL36mrqs=

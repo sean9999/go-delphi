@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e
-	github.com/sean9999/hermeti v0.1.1
+	github.com/sean9999/hermeti v0.4.0
 	github.com/sean9999/pear v0.0.5
 	github.com/spf13/afero v1.12.0
 	github.com/stretchr/testify v1.10.0
