@@ -37,8 +37,8 @@ type Message struct {
 }
 
 // RecipientEncryption() returns the recipient as a public encryption key (ECDH)
-func (m *Message) RecipientEncryption() crypto.PublicKey {
-	k, err := ecdh.X25519().NewPublicKey(m.RecipientKey.Encryption().Bytes())
+func (msg *Message) RecipientEncryption() crypto.PublicKey {
+	k, err := ecdh.X25519().NewPublicKey(msg.RecipientKey.Encryption().Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -46,8 +46,8 @@ func (m *Message) RecipientEncryption() crypto.PublicKey {
 }
 
 // Sender() returns the sender as a public encryption key (ECDH)
-func (m *Message) Sender() crypto.PublicKey {
-	k, err := ecdh.X25519().NewPublicKey(m.SenderKey.Encryption().Bytes())
+func (msg *Message) Sender() crypto.PublicKey {
+	k, err := ecdh.X25519().NewPublicKey(msg.SenderKey.Encryption().Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -55,13 +55,13 @@ func (m *Message) Sender() crypto.PublicKey {
 }
 
 // Ephemeral() returns the ephemeral key (X25519)
-func (m *Message) Ephemeral() crypto.PublicKey {
-	return ed25519.PublicKey(m.Eph)
+func (msg *Message) Ephemeral() crypto.PublicKey {
+	return ed25519.PublicKey(msg.Eph)
 }
 
 // Signatory() returns the public signing key of the sender (X25519)
-func (m *Message) Signatory() crypto.PublicKey {
-	k, err := ecdh.X25519().NewPublicKey(m.SenderKey.Signing().Bytes())
+func (msg *Message) Signatory() crypto.PublicKey {
+	k, err := ecdh.X25519().NewPublicKey(msg.SenderKey.Signing().Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -69,9 +69,9 @@ func (m *Message) Signatory() crypto.PublicKey {
 }
 
 // ensureNonce ensures the Message has a [Nonce], and returns it.
-func (m *Message) ensureNonce(randy io.Reader) Nonce {
-	if !m.Nonce.IsZero() {
-		return m.Nonce
+func (msg *Message) ensureNonce(randy io.Reader) Nonce {
+	if !msg.Nonce.IsZero() {
+		return msg.Nonce
 	}
 	nonce := Nonce{}
 	i, err := randy.Read(nonce[:])
@@ -81,16 +81,16 @@ func (m *Message) ensureNonce(randy io.Reader) Nonce {
 	if err != nil {
 		panic("error reading from randy into nonce")
 	}
-	m.Nonce = nonce
-	return m.Nonce
+	msg.Nonce = nonce
+	return msg.Nonce
 }
 
-func (m *Message) MarshalBinary() ([]byte, error) {
-	return msgpack.Marshal(m)
+func (msg *Message) MarshalBinary() ([]byte, error) {
+	return msgpack.Marshal(msg)
 }
 
-func (m *Message) UnmarshalBinary(p []byte) error {
-	return msgpack.Unmarshal(p, m)
+func (msg *Message) UnmarshalBinary(p []byte) error {
+	return msgpack.Unmarshal(p, msg)
 }
 
 // type msgBody struct {
@@ -135,46 +135,46 @@ func extractB64(hdrs map[string]string, key string) ([]byte, error) {
 	return b, nil
 }
 
-func (m *Message) ToPEM() pem.Block {
+func (msg *Message) ToPEM() pem.Block {
 
 	//	ensure message type is correct
 	var body []byte
-	if m.Encrypted() {
-		body = m.CipherText
+	if msg.Encrypted() {
+		body = msg.CipherText
 	} else {
-		body = m.PlainText
+		body = msg.PlainText
 	}
 
-	hdrs := m.Headers
+	hdrs := msg.Headers
 	hdrs["delphi/version"] = "v1"
 
-	if !m.RecipientKey.IsZero() {
-		hdrs["to"] = base64.StdEncoding.EncodeToString(m.RecipientKey.Bytes())
+	if !msg.RecipientKey.IsZero() {
+		hdrs["to"] = base64.StdEncoding.EncodeToString(msg.RecipientKey.Bytes())
 	}
-	if !m.SenderKey.IsZero() {
-		hdrs["from"] = base64.StdEncoding.EncodeToString(m.SenderKey.Bytes())
+	if !msg.SenderKey.IsZero() {
+		hdrs["from"] = base64.StdEncoding.EncodeToString(msg.SenderKey.Bytes())
 	}
-	if len(m.Eph) > 0 {
-		hdrs["eph"] = base64.StdEncoding.EncodeToString(m.Eph)
+	if len(msg.Eph) > 0 {
+		hdrs["eph"] = base64.StdEncoding.EncodeToString(msg.Eph)
 	}
-	if !m.Nonce.IsZero() {
-		hdrs["nonce"] = base64.StdEncoding.EncodeToString(m.Nonce.Bytes())
+	if !msg.Nonce.IsZero() {
+		hdrs["nonce"] = base64.StdEncoding.EncodeToString(msg.Nonce.Bytes())
 	}
-	if len(m.Sig) > 0 {
-		hdrs["sig"] = base64.StdEncoding.EncodeToString(m.Sig)
+	if len(msg.Sig) > 0 {
+		hdrs["sig"] = base64.StdEncoding.EncodeToString(msg.Sig)
 	}
 
 	p := pem.Block{
-		Type:    string(m.Subject),
+		Type:    string(msg.Subject),
 		Headers: hdrs,
 		Bytes:   body,
 	}
 	return p
 }
 
-func (m *Message) FromPEM(p pem.Block) error {
+func (msg *Message) FromPEM(p pem.Block) error {
 
-	m.Headers = make(KV)
+	msg.Headers = make(KV)
 
 	//	TODO: retire this. These values are now stored in the body. We don't want to overload PEM headers. They should stay light.
 	for k, v := range p.Headers {
@@ -184,80 +184,80 @@ func (m *Message) FromPEM(p pem.Block) error {
 			if err != nil {
 				return err
 			}
-			m.Nonce = Nonce(bin)
+			msg.Nonce = Nonce(bin)
 		case "sig":
 			bin, err := extractB64(p.Headers, "sig")
 			if err != nil {
 				return err
 			}
-			m.Sig = bin
+			msg.Sig = bin
 		case "from":
 			pubKeyBytes, err := extractB64(p.Headers, "from")
 			if err != nil {
 				return err
 			}
-			m.SenderKey = Key{}.From(pubKeyBytes)
+			msg.SenderKey = Key{}.From(pubKeyBytes)
 		case "to":
 			pubKeyBytes, err := extractB64(p.Headers, "to")
 			if err != nil {
 				return err
 			}
-			m.RecipientKey = Key{}.From(pubKeyBytes)
+			msg.RecipientKey = Key{}.From(pubKeyBytes)
 		case "eph":
 			bin, err := extractB64(p.Headers, "eph")
 			if err != nil {
 				return err
 			}
-			m.Eph = bin
+			msg.Eph = bin
 		default:
-			m.Headers[k] = v
+			msg.Headers[k] = v
 		}
 	}
 
-	m.Subject = Subject(p.Type)
+	msg.Subject = Subject(p.Type)
 
 	switch p.Type {
 	case string(EncryptedMessage):
-		m.CipherText = p.Bytes
+		msg.CipherText = p.Bytes
 	case string(PlainMessage):
-		m.PlainText = p.Bytes
+		msg.PlainText = p.Bytes
 	default:
 		//	any type other than EncryptedMessage is treated as plain text.
-		m.PlainText = p.Bytes
+		msg.PlainText = p.Bytes
 	}
 	return nil
 }
 
-func (m *Message) String() string {
-	p := m.ToPEM()
+func (msg *Message) String() string {
+	p := msg.ToPEM()
 	pemBytes := pem.EncodeToMemory(&p)
 	return string(pemBytes)
 }
 
-func (m *Message) Read(b []byte) (int, error) {
-	if m.readBuffer == nil {
-		p := m.ToPEM()
-		m.readBuffer = pem.EncodeToMemory(&p)
+func (msg *Message) Read(b []byte) (int, error) {
+	if msg.readBuffer == nil {
+		p := msg.ToPEM()
+		msg.readBuffer = pem.EncodeToMemory(&p)
 	}
-	if len(m.readBuffer) > 0 {
-		bytesWritten := copy(b, m.readBuffer)
-		m.readBuffer = m.readBuffer[bytesWritten:]
+	if len(msg.readBuffer) > 0 {
+		bytesWritten := copy(b, msg.readBuffer)
+		msg.readBuffer = msg.readBuffer[bytesWritten:]
 		return bytesWritten, nil
 	} else {
 		return 0, io.EOF
 	}
 }
 
-func (m *Message) Write(b []byte) (int, error) {
-	if m == nil {
+func (msg *Message) Write(b []byte) (int, error) {
+	if msg == nil {
 		return 0, io.EOF
 	}
 	pm, _ := pem.Decode(b)
 	if pm == nil {
 		return 0, errors.New("nil message")
 	}
-	m.Subject = Subject(pm.Type)
-	err := m.FromPEM(*pm)
+	msg.Subject = Subject(pm.Type)
+	err := msg.FromPEM(*pm)
 	if err != nil {
 		return 0, err
 	}
@@ -277,22 +277,26 @@ func (msg *Message) Valid() bool {
 	return (msg.Plain() && !msg.Encrypted()) || (msg.Encrypted() && !msg.Plain())
 }
 
-// Digest() returns that portion of a Message which should be hashed and signed
+var ErrInvalidMsg = pear.Defer("invalid message")
+var ErrNoNonce = pear.Defer("zero value nonce")
+var ErrNoSender = pear.Defer("no sender")
+
+// Digest returns a hash of the Message fields which should be hashed.
 func (msg *Message) Digest() ([]byte, error) {
 
-	//	Some fields are included. Some are required. Some are intentially omitted.
-	//	Consider which should be which
+	//	Some fields are included. Some are required. Some are intentionally omitted.
+	//	TODO: Consider if SenderKey belongs here.
 
 	hash := sha256.New()
 
 	if !msg.Valid() {
-		return nil, errors.New("message is not valid")
+		return nil, ErrInvalidMsg
 	}
 	if msg.Nonce.IsZero() {
-		return nil, errors.New("nonce is zero")
+		return nil, ErrNoNonce
 	}
 	if msg.SenderKey.IsZero() {
-		return nil, errors.New("Sender is zero")
+		return nil, ErrNoSender
 	}
 
 	sum := make([]byte, 0)
@@ -312,45 +316,42 @@ func (msg *Message) Digest() ([]byte, error) {
 	return hash.Sum(sum), nil
 }
 
-// msg.Sign(Signer) is another way of doing signer.Sign(*Message)
-func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
+var ErrNoSign = pear.Defer("could not sign message")
 
+// Sign signs a [Message]
+func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
 	if randy == nil {
 		return pear.New("a source of randomness was not passed in")
 	}
-
-	var errSign = pear.Defer("could not sign message")
 	msg.ensureNonce(randy)
 	digest, err := msg.Digest()
 	if err != nil {
-		return fmt.Errorf("%w: %w", errSign, err)
+		return fmt.Errorf("%w: %w", ErrNoSign, err)
 	}
 	sig, err := signer.Sign(randy, digest, nil)
 	if err != nil {
-		return fmt.Errorf("%w: %w", errSign, err)
+		return fmt.Errorf("%w: %w", ErrNoSign, err)
 	}
 	//msg.Headers.Set(keyspace, "sig", fmt.Sprintf("%x", sig))
 	msg.Sig = sig
 	return nil
 }
 
-// Verify() verifies a signature
+// Verify verifies the signature on a [Message]
 func (msg *Message) Verify() bool {
 	digest, err := msg.Digest()
 	if err != nil {
 		panic(err)
-	}
-	edpub := ed25519.PublicKey(msg.SenderKey.Signing().Bytes())
-	return ed25519.Verify(edpub, digest, msg.Sig)
+	} // TODO: do we really want to panic here?
+	pubKey := ed25519.PublicKey(msg.SenderKey.Signing().Bytes())
+	return ed25519.Verify(pubKey, digest, msg.Sig)
 }
 
-// msg.Encrypt(Encrypter) is another way of doing encrypter.Encrypt(*Message)
+// Encrypt encrypts a message to a [Peer]
 func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, recipient Peer, opts EncrypterOpts) error {
-
 	if recipient.IsZero() {
 		return fmt.Errorf("no recipient key. %w. %w", ErrBadKey, ErrDelphi)
 	}
-
 	msg.ensureNonce(randy)
 	err := encrypter.Encrypt(randy, msg, recipient, opts)
 	if err == nil {
@@ -361,12 +362,14 @@ func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, recipient Peer
 	return nil
 }
 
-// NewMessage() creates a new Message
+// NewMessage creates a new Message. If you pass in a source of randomness, it will come with a [Nonce].
 func NewMessage(randy io.Reader, subj Subject, plainTxt []byte) *Message {
 	msg := new(Message)
 	msg.Headers = make(KV)
-	//msg.ensureNonce(randy)
 	msg.PlainText = plainTxt
 	msg.Subject = subj
+	if randy != nil {
+		msg.ensureNonce(randy)
+	}
 	return msg
 }
