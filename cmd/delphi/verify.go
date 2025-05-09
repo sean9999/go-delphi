@@ -11,10 +11,10 @@ var ErrNoValid = pear.Defer("no valid signature")
 
 func (app *delphiApp) verify(env hermeti.Env) {
 
-	if !app.pluckPriv() {
-		fmt.Fprintln(env.ErrStream, ErrNoPrivKey)
-		return
-	}
+	//if !app.pluckPriv() {
+	//	fmt.Fprintln(env.ErrStream, ErrNoPrivKey)
+	//	return
+	//}
 
 	msg := app.PluckMessage()
 	if msg == nil {

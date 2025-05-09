@@ -176,7 +176,6 @@ func (msg *Message) FromPEM(p pem.Block) error {
 
 	msg.Headers = make(KV)
 
-	//	TODO: retire this. These values are now stored in the body. We don't want to overload PEM headers. They should stay light.
 	for k, v := range p.Headers {
 		switch k {
 		case "nonce":
@@ -362,7 +361,7 @@ func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, recipient Peer
 	return nil
 }
 
-// NewMessage creates a new Message. If you pass in a source of randomness, it will come with a [Nonce].
+// NewMessage creates a new Message. If you pass in a source of randomness, it will have a [Nonce].
 func NewMessage(randy io.Reader, subj Subject, plainTxt []byte) *Message {
 	msg := new(Message)
 	msg.Headers = make(KV)
