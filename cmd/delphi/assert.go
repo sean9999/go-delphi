@@ -6,14 +6,14 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (a *delphiApp) create_assertion(env hermeti.Env) {
+func (app *delphiApp) create_assertion(env hermeti.Env) {
 
-	if !a.pluckPriv() {
+	if !app.pluckPriv() {
 		fmt.Fprintln(env.ErrStream, ErrNoPrivKey)
 		return
 	}
 
-	msg, err := a.self.Assert(env.Randomness)
+	msg, err := app.self.Assert(env.Randomness)
 
 	if err != nil {
 		fmt.Fprintln(env.ErrStream, err)

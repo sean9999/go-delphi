@@ -9,12 +9,12 @@ import (
 )
 
 // PluckMessage plucks out a message, be it plain or encrypted, from the [pemBag].
-func (a *delphiApp) PluckMessage() *delphi.Message {
-	plainMsg := a.PluckPlain()
+func (app *delphiApp) PluckMessage() *delphi.Message {
+	plainMsg := app.PluckPlain()
 	if plainMsg != nil {
 		return plainMsg
 	}
-	encryptedMsg := a.PluckEncrypted()
+	encryptedMsg := app.PluckEncrypted()
 	if encryptedMsg != nil {
 		return encryptedMsg
 	}
@@ -22,27 +22,27 @@ func (a *delphiApp) PluckMessage() *delphi.Message {
 }
 
 // encrypt a PEM-encoded plain message, thereby turning it into an encrypted message
-func (a *delphiApp) sign(env hermeti.Env) {
+func (app *delphiApp) sign(env hermeti.Env) {
 
 	//	self
-	hasPriv := a.pluckPriv()
+	hasPriv := app.pluckPriv()
 	if !hasPriv {
 		fmt.Fprintln(env.ErrStream, ErrNoPrivKey)
 		return
 	}
 
 	//	message
-	msg := a.PluckMessage()
+	msg := app.PluckMessage()
 	if msg == nil {
 		fmt.Fprintln(env.ErrStream, errors.New("no message to sign"))
 		return
 	}
 
 	//	Attach public key. If we're signing it, we want to say who signed it.
-	msg.SenderKey = a.self.PublicKey()
+	msg.SenderKey = app.self.PublicKey()
 
 	//	Attach signature
-	err := msg.Sign(env.Randomness, &a.self)
+	err := msg.Sign(env.Randomness, &app.self)
 	if err != nil {
 		fmt.Fprintln(env.ErrStream, err)
 		return

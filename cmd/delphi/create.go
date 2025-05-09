@@ -8,15 +8,15 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (a *delphiApp) create(env hermeti.Env) {
+func (app *delphiApp) create(env hermeti.Env) {
 
-	if a.pems.Has(delphi.Privkey) {
-		fmt.Fprintln(env.ErrStream, "You passed in a private key. This operation is all about creating one.")
+	if app.pems.Has(delphi.Privkey) {
+		fmt.Fprintln(env.ErrStream, "You passed in app private key. This operation is all about creating one.")
 		return
 	}
 
 	p := delphi.NewPrincipal(env.Randomness)
-	pemFile, err := p.MarhsalPEM()
+	pemFile, err := p.MarshalPEM()
 
 	//	I don't see how an error is possibe. Nevertheless...
 	if err != nil {

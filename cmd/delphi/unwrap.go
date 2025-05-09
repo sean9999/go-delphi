@@ -8,14 +8,14 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (a *delphiApp) unwrap(env hermeti.Env) {
+func (app *delphiApp) unwrap(env hermeti.Env) {
 
-	if len(a.pems) == 0 {
+	if len(app.pems) == 0 {
 		fmt.Fprintln(env.ErrStream, errors.New("no pems"))
 		return
 	}
 
-	for subj, pems := range a.pems {
+	for subj, pems := range app.pems {
 		for _, pem := range pems {
 			switch subj {
 			case delphi.PlainMessage:

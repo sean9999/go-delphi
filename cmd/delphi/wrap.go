@@ -8,13 +8,13 @@ import (
 )
 
 // take in some data and wrap it in a PEM with type "DELPHI PLAIN MESSAGE"
-func (a *delphiApp) wrap(env hermeti.Env) {
+func (app *delphiApp) wrap(env hermeti.Env) {
 
-	body := a.inBuff.Bytes()
+	body := app.inBuff.Bytes()
 
 	msg := delphi.NewMessage(env.Randomness, "DELPHI PLAIN MESSAGE", body)
 
-	msg.SenderKey = a.self.PublicKey()
+	msg.SenderKey = app.self.PublicKey()
 
 	io.Copy(env.OutStream, msg)
 

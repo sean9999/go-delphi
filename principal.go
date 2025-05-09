@@ -14,13 +14,11 @@ import (
 	"github.com/sean9999/pear"
 )
 
-const ByteSize = 128
-
 var ErrBadKey = errors.New("bad key")
 
 type CryptOpts struct {
 	Nonce []byte
-	AAED  []byte
+	AAD   []byte
 }
 
 // A Principal contains cryptographic key material
@@ -28,13 +26,13 @@ type CryptOpts struct {
 type Principal = KeyPair
 
 // Sign signs a digest
-func (p *Principal) Sign(_ io.Reader, digest []byte, _ crypto.SignerOpts) ([]byte, error) {
+func (p Principal) Sign(_ io.Reader, digest []byte, _ crypto.SignerOpts) ([]byte, error) {
 	sig := ed25519.Sign(p.privateSigningKey(), digest)
 	return sig, nil
 }
 
 // Assert creates a signed assertion
-func (p *Principal) Assert(randy io.Reader) (*Message, error) {
+func (p Principal) Assert(randy io.Reader) (*Message, error) {
 
 	body := []byte("I assert that I am me.")
 	msg := p.ComposeMessage(randy, body)
@@ -50,13 +48,13 @@ func (p *Principal) Assert(randy io.Reader) (*Message, error) {
 }
 
 // Verify verifies a signature
-func (p *Principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []byte) bool {
-	edpub := ed25519.PublicKey(delphiPubKey.(Key).Signing().Bytes())
-	return ed25519.Verify(edpub, digest, sig)
+func (p Principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []byte) bool {
+	pubKey := ed25519.PublicKey(delphiPubKey.(Key).Signing().Bytes())
+	return ed25519.Verify(pubKey, digest, sig)
 }
 
 // Encrypt encrypts a [Message]
-func (p *Principal) Encrypt(randy io.Reader, msg *Message, recipient Key, opts any) error {
+func (p Principal) Encrypt(randy io.Reader, msg *Message, recipient Key, _ any) error {
 
 	if msg.Encrypted() {
 		return fmt.Errorf("%w: already encrypted", ErrDelphi)
@@ -87,12 +85,12 @@ func (p *Principal) Encrypt(randy io.Reader, msg *Message, recipient Key, opts a
 		return err
 	}
 
-	ciph, err := encrypt(sec, msg.PlainText, msg.Nonce.Bytes(), aad)
+	cipherText, err := encrypt(sec, msg.PlainText, msg.Nonce.Bytes(), aad)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrDelphi, err)
 	}
 
-	msg.CipherText = ciph
+	msg.CipherText = cipherText
 	msg.PlainText = nil
 
 	if msg.Subject == PlainMessage {
@@ -103,7 +101,7 @@ func (p *Principal) Encrypt(randy io.Reader, msg *Message, recipient Key, opts a
 }
 
 // Decrypt decrypts a [Message]
-func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
+func (p Principal) Decrypt(msg *Message, _ crypto.DecrypterOpts) error {
 
 	sharedSec, err := extractSharedSecret(msg.Eph, p.privateEncryptionKey().Bytes(), p.publicEncryptionKey().Bytes())
 	if err != nil {
@@ -125,15 +123,15 @@ func (p *Principal) Decrypt(msg *Message, opts crypto.DecrypterOpts) error {
 	return nil
 }
 
-func (p *Principal) publicSigningKey() ed25519.PublicKey {
+func (p Principal) publicSigningKey() ed25519.PublicKey {
 	return ed25519.PublicKey(p[0][1][:])
 }
 
-func (p *Principal) privateSigningKey() ed25519.PrivateKey {
+func (p Principal) privateSigningKey() ed25519.PrivateKey {
 	return ed25519.NewKeyFromSeed(p[1][1][:])
 }
 
-func (p *Principal) privateEncryptionKey() *ecdh.PrivateKey {
+func (p Principal) privateEncryptionKey() *ecdh.PrivateKey {
 	priv, err := ecdh.X25519().NewPrivateKey(p[1][0][:])
 	if err != nil {
 		panic(err)
@@ -141,15 +139,15 @@ func (p *Principal) privateEncryptionKey() *ecdh.PrivateKey {
 	return priv
 }
 
-func (p *Principal) publicEncryptionKey() *ecdh.PublicKey {
+func (p Principal) publicEncryptionKey() *ecdh.PublicKey {
 	return p.privateEncryptionKey().PublicKey()
 }
 
-func (p *Principal) PublicKey() Key {
+func (p Principal) PublicKey() Key {
 	return p[0]
 }
 
-func (p *Principal) PrivateKey() Key {
+func (p Principal) PrivateKey() Key {
 	return p[1]
 }
 
@@ -157,12 +155,12 @@ func (p Principal) Public() crypto.PublicKey {
 	return p[0]
 }
 
-func (p *Principal) Equal(p2 crypto.PublicKey) bool {
+func (p Principal) Equal(p2 crypto.PublicKey) bool {
 	//	true if key matches either encryption or signing key
 	return p.publicSigningKey().Equal(p2) || p.publicEncryptionKey().Equal(p2)
 }
 
-func (p *Principal) MarshalBinary() ([]byte, error) {
+func (p Principal) MarshalBinary() ([]byte, error) {
 	return p.Bytes(), nil
 }
 
@@ -177,10 +175,10 @@ func (p *Principal) UnmarshalBinary(b []byte) error {
 }
 
 // NewPrincipal creates a new [Principal]
-func NewPrincipal(randy io.Reader) *Principal {
+func NewPrincipal(randy io.Reader) Principal {
 	kp := NewKeyPair(randy)
 	p := Principal(kp)
-	return &p
+	return p
 }
 
 // From re-hydrates a [Principal] from a byte slice
@@ -212,7 +210,7 @@ func (p Peer) Nickname() string {
 	return name
 }
 
-func (p Principal) MarhsalPEM() (pem.Block, error) {
+func (p Principal) MarshalPEM() (pem.Block, error) {
 
 	blk := pem.Block{
 		Type: "DELPHI PRIVATE KEY",

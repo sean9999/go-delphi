@@ -9,8 +9,8 @@ import (
 )
 
 // PluckPeer plucks out a public key from the [pemBag].
-func (a *delphiApp) PluckPeer() (pubkey delphi.Key) {
-	peer := a.pems.Pluck(delphi.Pubkey)
+func (app *delphiApp) PluckPeer() (pubkey delphi.Key) {
+	peer := app.pems.Pluck(delphi.Pubkey)
 	if peer != nil {
 		//pubkey = delphi.KeyFromHex(string(peer.Bytes))
 		pubkey = delphi.KeyFromBytes(peer.Bytes)
@@ -19,8 +19,8 @@ func (a *delphiApp) PluckPeer() (pubkey delphi.Key) {
 }
 
 // PluckPlain plucks out a plain message from the [pemBag].
-func (a *delphiApp) PluckPlain() *delphi.Message {
-	p := a.pems.Pluck(delphi.PlainMessage)
+func (app *delphiApp) PluckPlain() *delphi.Message {
+	p := app.pems.Pluck(delphi.PlainMessage)
 	if p == nil {
 		return nil
 	}
@@ -33,32 +33,32 @@ func (a *delphiApp) PluckPlain() *delphi.Message {
 }
 
 // encrypt a PEM-encoded plain message, thereby turning it into an encrypted message
-func (a *delphiApp) encrypt(env hermeti.Env) {
+func (app *delphiApp) encrypt(env hermeti.Env) {
 
 	//	self
-	hasPriv := a.pluckPriv()
+	hasPriv := app.pluckPriv()
 	if !hasPriv {
 		fmt.Fprintln(env.ErrStream, ErrNoPrivKey)
 		return
 	}
 
 	//	recipient
-	recipient := a.PluckPeer()
+	recipient := app.PluckPeer()
 	if recipient.IsZero() {
 		fmt.Fprintln(env.ErrStream, ErrNoRecipient)
 		return
 	}
 
 	//	message
-	msg := a.PluckPlain()
+	msg := app.PluckPlain()
 	if msg == nil {
 		fmt.Fprintln(env.ErrStream, errors.New("nothing to encrypt"))
 		return
 	}
 
-	msg.SenderKey = a.self.PublicKey()
+	msg.SenderKey = app.self.PublicKey()
 
-	err := a.self.Encrypt(env.Randomness, msg, recipient, nil)
+	err := app.self.Encrypt(env.Randomness, msg, recipient, nil)
 	if err != nil {
 		fmt.Fprintln(env.ErrStream, err)
 		return
