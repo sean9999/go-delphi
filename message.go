@@ -316,6 +316,8 @@ func (msg *Message) Digest() ([]byte, error) {
 }
 
 var ErrNoSign = pear.Defer("could not sign message")
+var ErrNoMsg = pear.Defer("no message")
+var ErrNoValid = pear.Defer("no valid signature")
 
 // Sign signs a [Message]
 func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
