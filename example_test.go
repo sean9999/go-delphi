@@ -78,6 +78,8 @@ func Example() {
 	foo, ok := msg.Headers["foo"]
 
 	fmt.Println("should be true", ok)
-	fmt.Println("should be bar", foo)
+	fmt.Println(foo)
+	// Output:
+	// bar
 
 }
