@@ -11,5 +11,8 @@ RUN rm -f go.work go.work.sum
 RUN [ "go", "test", "-v", "./..." ]
 RUN go build -o /usr/bin/delphi ./cmd/delphi
 
+FROM scratch
+COPY --from=0 /usr/bin/delphi /bin/delphi
+
 CMD ["delphi"]
 

@@ -38,11 +38,8 @@ docker:
 
 push:
 	docker push ${CONTAINER_IMAGE}:${REF}
-	ifeq ($(BRANCH), "main") 
-		docker push ${CONTAINER_IMAGE}:latest
-	else
-		docker push ${CONTAINER_IMAGE}:${BRANCH}
-	endif
+	docker push ${CONTAINER_IMAGE}:latest
+	docker push ${CONTAINER_IMAGE}:${BRANCH}
 
 test:
 	go test -race ./...
