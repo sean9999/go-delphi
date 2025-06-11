@@ -6,7 +6,7 @@ REF := $$(git describe --dirty --tags --always)
 GOPROXY=proxy.golang.org
 
 info:
-	@printf "MODULE:\t%s\nSEMVER:\t%s\nBRANCH:\t%s\nREF:\t%s\n" $(MODULE) $(SEMVER) $(BRANCH) $(REF)
+	@printf "MODULE:\t%s\nSEMVER:\t%s\nBRANCH:\t%s\nREF:\t%s\nIMAGE:\t%s\n" $(MODULE) $(SEMVER) $(BRANCH) $(REF) $(CONTAINER_IMAGE)
 
 tidy:
 	go mod tidy
