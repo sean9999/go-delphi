@@ -33,13 +33,19 @@ install:
 
 docker:
 	docker build \
-	-t ${CONTAINER_IMAGE}:${REF} \
-	-t ${CONTAINER_IMAGE}:${BRANCH} .
+	-t ${CONTAINER_IMAGE}:${REF} .
+	ifeq ($(BRANCH), "main") 
+		docker build -t ${CONTAINER_IMAGE}:latest .
+	else
+		docker build -t ${CONTAINER_IMAGE}:${BRANCH} .
+	endif
 
 push:
 	docker push ${CONTAINER_IMAGE}:${REF}
 	ifeq ($(BRANCH), "main") 
 		docker push ${CONTAINER_IMAGE}:latest
+	else
+		docker push ${CONTAINER_IMAGE}:${BRANCH}
 	endif
 
 test:
