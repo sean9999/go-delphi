@@ -12,7 +12,7 @@ import (
 
 func TestVerify(t *testing.T) {
 
-	t.Run("positive case", func(t *testing.T) {
+	t.Run("negative case", func(t *testing.T) {
 
 		//	test CLI
 		cli := hermeti.NewTestCli(new(delphiApp))
@@ -32,11 +32,33 @@ func TestVerify(t *testing.T) {
 		cli.Run()
 
 		eBuf, _ := cli.ErrStream()
-
 		assert.Contains(t, eBuf.String(), delphi.ErrNoValid.Error())
 	})
 
-	t.Run("negative case", func(t *testing.T) {
+	t.Run("positive case", func(t *testing.T) {
+
+		//	test CLI
+		cli := hermeti.NewTestCli(new(delphiApp))
+		cli.Env.Args = []string{"delphi", "verify"}
+		cli.Env.Randomness = rand.Reader
+
+		//	mount ../../testdata into memory-backed fs
+		subFs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
+		cli.Env.Mount(subFs, "./testdata")
+
+		//	Pipe in signed message
+		err := cli.Env.PipeInFile("./testdata/fortune_signed.pem")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cli.Run()
+
+		eBuf, _ := cli.ErrStream()
+		assert.Equal(t, 0, eBuf.Len())
+		oBuf, err := cli.OutStream()
+		assert.NoError(t, err)
+		assert.Contains(t, oBuf.String(), "ok")
 
 	})
 

@@ -1,4 +1,5 @@
 MODULE=github.com/sean9999/go-delphi
+CONTAINER_IMAGE=docker.io/codemonk9999/delphi
 SEMVER := $$(git tag --sort=-version:refname | head -n 1)
 BRANCH := $$(git branch --show-current)
 REF := $$(git describe --dirty --tags --always)
@@ -30,11 +31,17 @@ bin/delphi:
 install:
 	go install ./cmd/delphi
 
-# if tests mutate the contents of ./testadata, let's mitigate the problem
+docker:
+	docker build -t ${CONTAINER_IMAGE}:${REF} -t ${CONTAINER_IMAGE}:${BRANCH} -t ${CONTAINER_IMAGE}:latest .
+
+push:
+	docker push ${CONTAINER_IMAGE}:${REF}
+	ifeq ($(BRANCH), "main") 
+		docker push ${CONTAINER_IMAGE}:latest
+	endif
+
 test:
-	git restore testdata
-	go test ./...
-	git restore testdata
+	go test -race ./...
 
 .PHONY: test
 

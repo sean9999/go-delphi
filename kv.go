@@ -44,7 +44,7 @@ func (kv *KV) UnmarshalBinary(b []byte) error {
 // LexicolOrder ranges through a KV in lexical order
 func (kv KV) LexicalOrder() iter.Seq2[string, string] {
 	keys := make([]string, 0, len(kv))
-	for k, _ := range kv {
+	for k := range kv {
 		keys = append(keys, k)
 	}
 	slices.Sort(keys)

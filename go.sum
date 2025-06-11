@@ -9,6 +9,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sean9999/hermeti v0.4.0 h1:DvKJqzy9GtkXAa3p2ulvrm0c/MHo8uu0mAoFV719Hbw=
 github.com/sean9999/hermeti v0.4.0/go.mod h1:TaERtyaqhd1DmzasV59XB3KAOPFVEm6yMtAG3lpC/ZY=
+github.com/sean9999/hermeti v0.5.0 h1:PXKBi0IIuhtSYydePgPmXHAqfo3ehrpNj2XNsLtF054=
+github.com/sean9999/hermeti v0.5.0/go.mod h1:TaERtyaqhd1DmzasV59XB3KAOPFVEm6yMtAG3lpC/ZY=
 github.com/sean9999/pear v0.0.5 h1:IHOYxBo1KymPjyN00EIedY2Ifa5XAZNy4eWgcmI6ssc=
 github.com/sean9999/pear v0.0.5/go.mod h1:eiFHU9C1yi9faFKkW//79maetAugdn7UUup5Ckb0pes=
 github.com/spf13/afero v1.12.0 h1:UcOPyRBYczmFn6yvphxkn9ZEOY65cpwGKb5mL36mrqs=
