@@ -11,7 +11,7 @@ RUN rm -f go.work go.work.sum
 RUN [ "go", "test", "-v", "./..." ]
 RUN go build -o /usr/bin/delphi ./cmd/delphi
 
-FROM debian:bookworm-slim
+FROM ubuntu
 COPY --from=builder /usr/bin/delphi /bin/delphi
 
 ENTRYPOINT ["/bin/delphi"]
