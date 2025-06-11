@@ -32,7 +32,7 @@ install:
 	go install ./cmd/delphi
 
 docker:
-	docker build -t ${CONTAINER_IMAGE}:${REF} \
+	docker build --no-cache -t ${CONTAINER_IMAGE}:${REF} \
 	-t ${CONTAINER_IMAGE}:latest \
 	-t ${CONTAINER_IMAGE}:${BRANCH} .
 
