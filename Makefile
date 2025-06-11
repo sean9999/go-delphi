@@ -32,13 +32,9 @@ install:
 	go install ./cmd/delphi
 
 docker:
-	docker build \
-	-t ${CONTAINER_IMAGE}:${REF} .
-	ifeq ($(BRANCH), "main") 
-		docker build -t ${CONTAINER_IMAGE}:latest .
-	else
-		docker build -t ${CONTAINER_IMAGE}:${BRANCH} .
-	endif
+	docker build -t ${CONTAINER_IMAGE}:${REF} \
+	-t ${CONTAINER_IMAGE}:latest \
+	-t ${CONTAINER_IMAGE}:${BRANCH} .
 
 push:
 	docker push ${CONTAINER_IMAGE}:${REF}
