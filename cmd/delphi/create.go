@@ -24,6 +24,8 @@ func (app *delphiApp) create(env hermeti.Env) {
 		return
 	}
 
+	app.self = p
+
 	pemBytes := pem.EncodeToMemory(&pemFile)
 	fmt.Fprint(env.OutStream, string(pemBytes))
 }

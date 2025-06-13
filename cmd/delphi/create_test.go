@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"io"
 	"testing"
 
@@ -42,5 +43,18 @@ func TestCreate(t *testing.T) {
 
 	assert.Equal(t, delphi.Subject("DELPHI PRIVATE KEY"), msg.Subject)
 	assert.Equal(t, "falling-dawn", msg.Headers.Get(delphi.Keyspace, "nick"))
+
+}
+
+func BenchmarkCreate(b *testing.B) {
+
+	app := new(delphiApp)
+	cli := hermeti.NewTestCli(app)
+	cli.Env.Randomness = rand.Reader
+	cli.Env.Args = []string{"delphi", "create"}
+
+	for b.Loop() {
+		cli.Run()
+	}
 
 }
