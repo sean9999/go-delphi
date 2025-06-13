@@ -80,6 +80,10 @@ func Example() {
 	fmt.Println("should be true", ok)
 	fmt.Println(foo)
 	// Output:
+	// should be nil <nil>
+	// should be nil <nil>
+	// should be 0 0
+	// should be true true
 	// bar
 
 }

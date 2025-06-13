@@ -23,7 +23,7 @@ type CryptOpts struct {
 
 // A Principal contains cryptographic key material
 // and can sign, verify, encrypt, and decrypt [Message]s.
-type Principal = KeyPair
+type Principal = KeyChain
 
 // Sign signs a digest
 func (p Principal) Sign(_ io.Reader, digest []byte, _ crypto.SignerOpts) ([]byte, error) {
@@ -49,12 +49,12 @@ func (p Principal) Assert(randy io.Reader) (*Message, error) {
 
 // Verify verifies a signature
 func (p Principal) Verify(delphiPubKey crypto.PublicKey, digest []byte, sig []byte) bool {
-	pubKey := ed25519.PublicKey(delphiPubKey.(Key).Signing().Bytes())
+	pubKey := ed25519.PublicKey(delphiPubKey.(KeyPair).Signing().Bytes())
 	return ed25519.Verify(pubKey, digest, sig)
 }
 
 // Encrypt encrypts a [Message]
-func (p Principal) Encrypt(randy io.Reader, msg *Message, recipient Key, _ any) error {
+func (p Principal) Encrypt(randy io.Reader, msg *Message, recipient KeyPair, _ any) error {
 
 	if msg.Encrypted() {
 		return fmt.Errorf("%w: already encrypted", ErrDelphi)
@@ -143,11 +143,11 @@ func (p Principal) publicEncryptionKey() *ecdh.PublicKey {
 	return p.privateEncryptionKey().PublicKey()
 }
 
-func (p Principal) PublicKey() Key {
+func (p Principal) PublicKey() KeyPair {
 	return p[0]
 }
 
-func (p Principal) PrivateKey() Key {
+func (p Principal) PrivateKey() KeyPair {
 	return p[1]
 }
 
@@ -166,11 +166,11 @@ func (p Principal) MarshalBinary() ([]byte, error) {
 
 func (p *Principal) UnmarshalBinary(b []byte) error {
 
-	if len(b) != 4*subKeySize {
-		return pear.Errorf("wrong byte slice size. wanted %d but got %d", 4*subKeySize, len(b))
+	if len(b) != 4*KeySize {
+		return pear.Errorf("wrong byte slice size. wanted %d but got %d", 4*KeySize, len(b))
 	}
-	p[0] = KeyFromBytes(b[:2*subKeySize])
-	p[1] = KeyFromBytes(b[2*subKeySize:])
+	p[0] = KeyFromBytes(b[:2*KeySize])
+	p[1] = KeyFromBytes(b[2*KeySize:])
 	return nil
 }
 
@@ -183,8 +183,8 @@ func NewPrincipal(randy io.Reader) Principal {
 
 // From re-hydrates a [Principal] from a byte slice
 func (Principal) From(b []byte) (Principal, error) {
-	if len(b) < 4*subKeySize {
-		return Principal{}, fmt.Errorf("%w: not enough bytes. Expected %d but got %d", ErrBadKey, 4*subKeySize, len(b))
+	if len(b) < 4*KeySize {
+		return Principal{}, fmt.Errorf("%w: not enough bytes. Expected %d but got %d", ErrBadKey, 4*KeySize, len(b))
 	}
 	p := new(Principal)
 	err := p.UnmarshalBinary(b)
@@ -200,7 +200,7 @@ func (p Principal) Nickname() string {
 }
 
 // A Peer is the public portion of a Principal, which is a public-private key pair.
-type Peer = Key
+type Peer = KeyPair
 
 // A Nickname is a very memorable string for humans only. It has weak uniqueness that is good enough for some uses.
 func (p Peer) Nickname() string {
@@ -227,13 +227,13 @@ func (p *Principal) UnmarshalPEM(b pem.Block) error {
 	if b.Type != "DELPHI PRIVATE KEY" {
 		return errors.New("wrong type of PEM")
 	}
-	if len(b.Bytes) != subKeySize*4 {
-		return fmt.Errorf("wrong byte size for private key. wanted %d but got %d", subKeySize*4, len(b.Bytes))
+	if len(b.Bytes) != KeySize*4 {
+		return fmt.Errorf("wrong byte size for private key. wanted %d but got %d", KeySize*4, len(b.Bytes))
 	}
-	copy(p[0][0][:], b.Bytes[0:subKeySize])
-	copy(p[0][1][:], b.Bytes[subKeySize:subKeySize*2])
-	copy(p[1][0][:], b.Bytes[subKeySize*2:subKeySize*3])
-	copy(p[1][1][:], b.Bytes[subKeySize*3:])
+	copy(p[0][0][:], b.Bytes[0:KeySize])
+	copy(p[0][1][:], b.Bytes[KeySize:KeySize*2])
+	copy(p[1][0][:], b.Bytes[KeySize*2:KeySize*3])
+	copy(p[1][1][:], b.Bytes[KeySize*3:])
 	return nil
 }
 

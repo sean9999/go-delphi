@@ -26,8 +26,8 @@ var ErrNotImplemented = errors.New("not implemented")
 type Message struct {
 	readBuffer   []byte  `msgpack:"-"`
 	Subject      Subject `msgpack:"subj" json:"subj"`
-	RecipientKey Key     `msgpack:"to" json:"to"`
-	SenderKey    Key     `msgpack:"from" json:"from"`
+	RecipientKey KeyPair `msgpack:"to" json:"to"`
+	SenderKey    KeyPair `msgpack:"from" json:"from"`
 	Headers      KV      `msgpack:"hdrs" json:"hdrs"` // additional authenticated data (AAD)
 	Eph          []byte  `msgpack:"eph" json:"eph"`
 	Nonce        Nonce   `msgpack:"nonce" json:"nonce"`
@@ -195,13 +195,13 @@ func (msg *Message) FromPEM(p pem.Block) error {
 			if err != nil {
 				return err
 			}
-			msg.SenderKey = Key{}.From(pubKeyBytes)
+			msg.SenderKey = KeyPair{}.From(pubKeyBytes)
 		case "to":
 			pubKeyBytes, err := extractB64(p.Headers, "to")
 			if err != nil {
 				return err
 			}
-			msg.RecipientKey = Key{}.From(pubKeyBytes)
+			msg.RecipientKey = KeyPair{}.From(pubKeyBytes)
 		case "eph":
 			bin, err := extractB64(p.Headers, "eph")
 			if err != nil {

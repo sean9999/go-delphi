@@ -42,7 +42,10 @@ push:
 	docker push ${CONTAINER_IMAGE}:${BRANCH}
 
 test:
-	go test -race ./...
+	go test -vet=all -race ./...
+
+# restricted set of 'cacheable' test flags, defined as -benchtime, -cpu,
+# -list, -parallel, -run, -short, -timeout, -failfast, -fullpath and -v.
 
 .PHONY: test
 

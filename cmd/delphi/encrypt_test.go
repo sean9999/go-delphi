@@ -23,18 +23,18 @@ func TestEncrypt(t *testing.T) {
 	subfs := afero.NewIOFS(afero.NewBasePathFs(afero.NewOsFs(), "../../testdata"))
 	cli.Env.Mount(subfs, "./testdata")
 
-	//	pipe recipient, self, and message into stdin
-
-	err := cli.Env.PipeInFile("./testdata/stack.pem")
+	//	encrypt needs:
+	// 		1. a private key (the principal doing the encrypting)
+	//		2. something to encrypt (a plain message)
+	//		3. a public key (who are we encrypting to?)
+	err := cli.Env.PipeInFiles("testdata/falling-grass.pub.pem", "testdata/bitter-frost.pem", "testdata/fortune_feynman.pem")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	//	run cat testdata/stack.pem | delphi encrypt
+	//	run cat testdata/those_3_pems.pem | delphi encrypt
 	cli.Run()
-
 	buf, _ := cli.OutStream()
-
 	assert.Contains(t, buf.String(), "DELPHI ENCRYPTED MESSAGE")
 
 	// pem from bytes
@@ -45,6 +45,10 @@ func TestEncrypt(t *testing.T) {
 	msg := new(delphi.Message)
 	err = msg.FromPEM(*pem)
 	assert.NoError(t, err)
+
+	assert.False(t, delphi.Nonce.IsZero(msg.Nonce))
+
+	assert.Len(t, msg.Eph, delphi.KeySize)
 
 	assert.Equal(t, "falling-grass", msg.RecipientKey.Nickname())
 	assert.Equal(t, "bitter-frost", msg.SenderKey.Nickname())

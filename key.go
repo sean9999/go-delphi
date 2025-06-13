@@ -11,13 +11,14 @@ import (
 	"slices"
 )
 
-const subKeySize = 32
+// KeySize is 32 because we're dealing with ed25519
+const KeySize = 32
 
-// a subKey is either: a public encryption, public signing, private encryption, or private signing key
-type subKey [subKeySize]byte
+// a key is either a public encryption, public signing, private encryption, or private signing key
+type key [KeySize]byte
 
 // a subKey is zero if all it's bytes are zero
-func (s subKey) IsZero() bool {
+func (s key) IsZero() bool {
 	for _, b := range s {
 		if b != 0 {
 			return false
@@ -26,69 +27,61 @@ func (s subKey) IsZero() bool {
 	return true
 }
 
-func (s subKey) Bytes() []byte {
+func (s key) Bytes() []byte {
 	return s[:]
 }
 
-// a Key is two (specifically one encryption and one signing) subKeys
-type Key [2]subKey
+// a KeyPair is either two public keys, or two private keys (one encryption, one signing)
+type KeyPair [2]key
 
-func (k Key) MarshalJson() ([]byte, error) {
+func (k KeyPair) MarshalJson() ([]byte, error) {
 	str := k.ToHex()
 	return []byte(str), nil
 }
 
-func (k *Key) UnmarshalJSON(b []byte) error {
+func (k *KeyPair) UnmarshalJSON(b []byte) error {
 	j := KeyFromHex(string(b))
 	copy(k[:], j[:])
 	return nil
 }
 
-// func (k Key) UnmarshalJSON(hexbytes []byte) error {
-// 	actualBytes, err := hex.DecodeString(string(hexbytes))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	copy(k[:][:], actualBytes)
-// 	return nil
-// }
-
-func (k Key) MarshalText() ([]byte, error) {
+func (k KeyPair) MarshalText() ([]byte, error) {
 	return []byte(k.ToHex()), nil
 }
 
 // a Key is zero if all it's subKeys are zero
-func (k Key) IsZero() bool {
+func (k KeyPair) IsZero() bool {
 	return k[0].IsZero() && k[1].IsZero()
 }
 
-func (k Key) From(b []byte) Key {
-	var enc subKey
-	var sig subKey
-	copy(enc[:], b[:subKeySize])
-	copy(sig[:], b[subKeySize:])
-	var j Key
+func (k KeyPair) From(b []byte) KeyPair {
+	var enc key
+	var sig key
+	copy(enc[:], b[:KeySize])
+	copy(sig[:], b[KeySize:])
+	var j KeyPair
 	j[0] = enc
 	j[1] = sig
 	return j
 }
 
-// a KeyPair is two [Key]s. One public, one private
-type KeyPair [2]Key
+// a KeyChain is two [KeyPair]s. One public, one private.
+// It is the full set of key material necessary for encryption, decryption, signing, and verifying
+type KeyChain [2]KeyPair
 
 // a KeyPair is zero if all it's keys are zero
-func (kp KeyPair) IsZero() bool {
+func (kp KeyChain) IsZero() bool {
 	return kp[0].IsZero() && kp[1].IsZero()
 }
 
-func (k Key) Bytes() []byte {
-	b := make([]byte, 2*subKeySize)
-	copy(b[:subKeySize], k[0][:])
-	copy(b[subKeySize:], k[1][:])
+func (k KeyPair) Bytes() []byte {
+	b := make([]byte, 2*KeySize)
+	copy(b[:KeySize], k[0][:])
+	copy(b[KeySize:], k[1][:])
 	return b
 }
 
-func (k Key) ToInt64() int64 {
+func (k KeyPair) ToInt64() int64 {
 	var num int64
 	buf := bytes.NewReader(k.Bytes())
 	err := binary.Read(buf, binary.BigEndian, &num)
@@ -98,7 +91,7 @@ func (k Key) ToInt64() int64 {
 	return num
 }
 
-func (k Key) Equal(j Key) bool {
+func (k KeyPair) Equal(j KeyPair) bool {
 	for i := range 2 {
 
 		jslice := j[i][:]
@@ -116,62 +109,60 @@ func (k Key) Equal(j Key) bool {
 	return true
 }
 
-func (k Key) Signing() subKey {
+func (k KeyPair) Signing() key {
 	return k[1]
 }
 
-func (k Key) Encryption() subKey {
+func (k KeyPair) Encryption() key {
 	return k[0]
 }
 
-func (k KeyPair) Bytes() []byte {
-	b := make([]byte, 4*subKeySize)
-	copy(b[:2*subKeySize], k[0].Bytes()) // public
-	copy(b[2*subKeySize:], k[1].Bytes()) // private
+func (k KeyChain) Bytes() []byte {
+	b := make([]byte, 4*KeySize)
+	copy(b[:2*KeySize], k[0].Bytes()) // public
+	copy(b[2*KeySize:], k[1].Bytes()) // private
 	return b
 }
 
-func (k Key) ToHex() string {
+func (k KeyPair) ToHex() string {
 	return hex.EncodeToString(k.Bytes())
 }
 
-func KeyFromHex(str string) Key {
+func KeyFromHex(str string) KeyPair {
 	bin, err := hex.DecodeString(str)
 	if err != nil {
-		return Key{}
+		return KeyPair{}
 	}
 	return KeyFromBytes(bin)
 }
 
-func KeyFromBytes(b []byte) Key {
-
+func KeyFromBytes(b []byte) KeyPair {
 	gotSize := len(b)
-	wantSize := subKeySize * 2
-
+	wantSize := KeySize * 2
 	if gotSize != wantSize {
 		panic(fmt.Sprintf("wrong length for key. Wanted %d but got %d", wantSize, gotSize))
 	}
-	k := Key{}
-	copy(k[0][:], b[:subKeySize])
-	copy(k[1][:], b[subKeySize:])
+	k := KeyPair{}
+	copy(k[0][:], b[:KeySize])
+	copy(k[1][:], b[KeySize:])
 	return k
 }
 
-func NewSubKey(randy io.Reader) subKey {
-	sk := subKey{}
+func NewSubKey(randy io.Reader) key {
+	sk := key{}
 	randy.Read(sk[:])
 	return sk
 }
 
-func NewKey(randy io.Reader) Key {
+func NewKey(randy io.Reader) KeyPair {
 	if randy == nil {
-		return Key{}
+		return KeyPair{}
 	}
-	return Key{NewSubKey(randy), NewSubKey(randy)}
+	return KeyPair{NewSubKey(randy), NewSubKey(randy)}
 }
 
 // NewKeyPair generates valid ed25519 and X25519 keys
-func NewKeyPair(randy io.Reader) KeyPair {
+func NewKeyPair(randy io.Reader) KeyChain {
 
 	/**
 	 * Layout:
@@ -181,7 +172,7 @@ func NewKeyPair(randy io.Reader) KeyPair {
 	 *	4th 32 bytes:	private signing key
 	 **/
 
-	var kp KeyPair
+	var kp KeyChain
 
 	//	encryption keys
 	ed := ecdh.X25519()
@@ -191,8 +182,8 @@ func NewKeyPair(randy io.Reader) KeyPair {
 	}
 	encryptionPub := encryptionPriv.PublicKey()
 
-	kp[0][0] = subKey(encryptionPub.Bytes())
-	kp[1][0] = subKey(encryptionPriv.Bytes())
+	kp[0][0] = key(encryptionPub.Bytes())
+	kp[1][0] = key(encryptionPriv.Bytes())
 
 	//	signing keys
 	signPub, signPriv, err := ed25519.GenerateKey(randy)
@@ -200,8 +191,8 @@ func NewKeyPair(randy io.Reader) KeyPair {
 		panic(err)
 	}
 
-	kp[0][1] = subKey(signPub)
-	kp[1][1] = subKey(signPriv[:subKeySize])
+	kp[0][1] = key(signPub)
+	kp[1][1] = key(signPriv[:KeySize])
 
 	return kp
 }

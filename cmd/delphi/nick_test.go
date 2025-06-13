@@ -23,6 +23,7 @@ func TestNick(t *testing.T) {
 
 	//	read bitter-frost.pem into stdin
 	err := cli.Env.PipeInFile("./testdata/bitter-frost.pem")
+	assert.NoError(t, err)
 
 	cli.Run()
 
