@@ -87,3 +87,11 @@ func Example() {
 	// bar
 
 }
+
+func multi(nums []int) int {
+	result := 1
+	for _, n := range nums {
+		result = result * n
+	}
+	return result
+}

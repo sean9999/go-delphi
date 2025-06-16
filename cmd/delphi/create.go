@@ -8,7 +8,7 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (app *delphiApp) create(env hermeti.Env) {
+func (app *DelphiApp) create(env hermeti.Env) {
 
 	if app.pems.Has(delphi.Privkey) {
 		fmt.Fprintln(env.ErrStream, "You passed in app private key. This operation is all about creating one.")

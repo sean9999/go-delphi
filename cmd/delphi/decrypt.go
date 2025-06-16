@@ -7,11 +7,11 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (app *delphiApp) Info(env hermeti.Env) {
-	fmt.Fprintln(env.OutStream, app.self.Nickname())
+func (app *DelphiApp) Info(env hermeti.Env) {
+	fmt.Fprintln(env.OutStream, app.Self.Nickname())
 }
 
-func (app *delphiApp) PluckEncrypted() *delphi.Message {
+func (app *DelphiApp) PluckEncrypted() *delphi.Message {
 	p := app.pems.Pluck(delphi.EncryptedMessage)
 	if p == nil {
 		return nil
@@ -24,7 +24,7 @@ func (app *delphiApp) PluckEncrypted() *delphi.Message {
 	return msg
 }
 
-func (app *delphiApp) decrypt(env hermeti.Env) {
+func (app *DelphiApp) decrypt(env hermeti.Env) {
 
 	msg := app.PluckEncrypted()
 
@@ -33,7 +33,7 @@ func (app *delphiApp) decrypt(env hermeti.Env) {
 		return
 	}
 
-	err := app.self.Decrypt(msg, nil)
+	err := app.Self.Decrypt(msg, nil)
 	if err != nil {
 		fmt.Fprintln(env.ErrStream, err)
 		return

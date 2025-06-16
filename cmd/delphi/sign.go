@@ -3,13 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
+
 	"github.com/sean9999/go-delphi"
 
 	"github.com/sean9999/hermeti"
 )
 
 // PluckMessage plucks out a message, be it plain or encrypted, from the [pemBag].
-func (app *delphiApp) PluckMessage() *delphi.Message {
+func (app *DelphiApp) PluckMessage() *delphi.Message {
 	plainMsg := app.PluckPlain()
 	if plainMsg != nil {
 		return plainMsg
@@ -22,7 +23,7 @@ func (app *delphiApp) PluckMessage() *delphi.Message {
 }
 
 // encrypt a PEM-encoded plain message, thereby turning it into an encrypted message
-func (app *delphiApp) sign(env hermeti.Env) {
+func (app *DelphiApp) sign(env hermeti.Env) {
 
 	//	self
 	hasPriv := app.pluckPriv()
@@ -39,10 +40,10 @@ func (app *delphiApp) sign(env hermeti.Env) {
 	}
 
 	//	Attach public key. If we're signing it, we want to say who signed it.
-	msg.SenderKey = app.self.PublicKey()
+	msg.SenderKey = app.Self.PublicKey()
 
 	//	Attach signature
-	err := msg.Sign(env.Randomness, &app.self)
+	err := msg.Sign(env.Randomness, &app.Self)
 	if err != nil {
 		fmt.Fprintln(env.ErrStream, err)
 		return

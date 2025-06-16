@@ -8,7 +8,7 @@ import (
 
 var ErrNoPrivKey = errors.New("no private key")
 
-func (app *delphiApp) pluckPriv() bool {
+func (app *DelphiApp) pluckPriv() bool {
 	selfPem := app.pems.Pluck(delphi.Privkey)
 	if selfPem == nil {
 		return false
@@ -19,7 +19,7 @@ func (app *delphiApp) pluckPriv() bool {
 	if err != nil {
 		return false
 	}
-	app.self = *self
+	app.Self = *self
 	return true
 }
 

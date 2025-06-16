@@ -14,7 +14,7 @@ import (
 func TestEncrypt(t *testing.T) {
 
 	//	cli with testing env
-	app := new(delphiApp)
+	app := new(DelphiApp)
 	cli := hermeti.NewTestCli(app)
 	cli.Env.Args = []string{"delphi", "encrypt"}
 	cli.Env.Randomness = rand.Reader

@@ -9,13 +9,13 @@ import (
 )
 
 // output pub key
-func (app *delphiApp) pub(env hermeti.Env) {
+func (app *DelphiApp) pub(env hermeti.Env) {
 
 	if hasPriv := app.pluckPriv(); !hasPriv {
 		fmt.Fprintln(env.ErrStream, "no private key was passed in")
 	}
 
-	pubkey := app.self.PublicKey()
+	pubkey := app.Self.PublicKey()
 
 	p := pem.Block{
 		Type: string(delphi.Pubkey),

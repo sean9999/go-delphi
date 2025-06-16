@@ -15,7 +15,7 @@ import (
 func TestAssert(t *testing.T) {
 
 	//	cli with testing env
-	app := new(delphiApp)
+	app := new(DelphiApp)
 	cli := hermeti.NewTestCli(app)
 	cli.Env.Args = []string{"delphi", "assert"}
 	cli.Env.Randomness = rand.Reader

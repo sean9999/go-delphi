@@ -1,7 +1,9 @@
+// this does cool stuff
 package main
 
 import (
 	"fmt"
+
 	"github.com/sean9999/hermeti"
 )
 
@@ -14,7 +16,7 @@ func main() {
 		}
 	}()
 
-	app := new(delphiApp)
+	app := new(DelphiApp)
 	cli := hermeti.NewRealCli(app)
 	cli.Run()
 

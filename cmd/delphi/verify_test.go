@@ -15,7 +15,7 @@ func TestVerify(t *testing.T) {
 	t.Run("negative case", func(t *testing.T) {
 
 		//	test CLI
-		cli := hermeti.NewTestCli(new(delphiApp))
+		cli := hermeti.NewTestCli(new(DelphiApp))
 		cli.Env.Args = []string{"delphi", "verify"}
 		cli.Env.Randomness = rand.Reader
 
@@ -38,7 +38,7 @@ func TestVerify(t *testing.T) {
 	t.Run("positive case", func(t *testing.T) {
 
 		//	test CLI
-		cli := hermeti.NewTestCli(new(delphiApp))
+		cli := hermeti.NewTestCli(new(DelphiApp))
 		cli.Env.Args = []string{"delphi", "verify"}
 		cli.Env.Randomness = rand.Reader
 

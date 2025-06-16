@@ -8,7 +8,7 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (app *delphiApp) unwrap(env hermeti.Env) {
+func (app *DelphiApp) unwrap(env hermeti.Env) {
 
 	if len(app.pems) == 0 {
 		fmt.Fprintln(env.ErrStream, errors.New("no pems"))

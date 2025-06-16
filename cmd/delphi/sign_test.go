@@ -14,7 +14,7 @@ import (
 func TestSign(t *testing.T) {
 
 	//	cli with testing env
-	app := new(delphiApp)
+	app := new(DelphiApp)
 	cli := hermeti.NewTestCli(app)
 	cli.Env.Args = []string{"delphi", "sign"}
 	cli.Env.Randomness = rand.Reader

@@ -7,7 +7,7 @@ import (
 	"github.com/sean9999/hermeti"
 )
 
-func (app *delphiApp) verify(env hermeti.Env) {
+func (app *DelphiApp) verify(env hermeti.Env) {
 
 	msg := app.PluckMessage()
 	if msg == nil {

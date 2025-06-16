@@ -11,7 +11,7 @@ import (
 func TestPub(t *testing.T) {
 
 	//	cli with testing env
-	app := new(delphiApp)
+	app := new(DelphiApp)
 	cli := hermeti.NewTestCli(app)
 	cli.Env.Args = []string{"delphi", "pub"}
 

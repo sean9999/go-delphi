@@ -3,20 +3,21 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
+
 	"github.com/sean9999/go-delphi"
 	"github.com/sean9999/hermeti"
-	"io"
 )
 
-type delphiApp struct {
-	self       delphi.Principal
+type DelphiApp struct {
+	Self       delphi.Principal
 	subcommand string
 	pems       pemBag
 	inBuff     *bytes.Buffer
 }
 
 // Run runs a *delphiApp against a [hermiti.Env].
-func (app *delphiApp) Run(env hermeti.Env) {
+func (app *DelphiApp) Run(env hermeti.Env) {
 
 	//	subcommands come from env.Args
 	switch app.subcommand {
@@ -48,7 +49,7 @@ func (app *delphiApp) Run(env hermeti.Env) {
 }
 
 // Init prepares a *delphiApp for [Run]nig
-func (app *delphiApp) Init(env hermeti.Env) error {
+func (app *DelphiApp) Init(env hermeti.Env) error {
 
 	//	the subcommand is the 2nd arg
 	if len(env.Args) >= 2 {

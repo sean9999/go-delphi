@@ -210,10 +210,21 @@ func (p Peer) Nickname() string {
 	return name
 }
 
-func (p Principal) MarshalPEM() (pem.Block, error) {
-
+func (p Peer) MarshalPEM() (pem.Block, error) {
 	blk := pem.Block{
-		Type: "DELPHI PRIVATE KEY",
+		Type: string(Pubkey),
+		Headers: map[string]string{
+			fmt.Sprintf("%s/%s", Keyspace, "nick"):    p.Nickname(),
+			fmt.Sprintf("%s/%s", Keyspace, "version"): Version,
+		},
+		Bytes: p.Bytes(),
+	}
+	return blk, nil
+}
+
+func (p Principal) MarshalPEM() (pem.Block, error) {
+	blk := pem.Block{
+		Type: string(Privkey),
 		Headers: map[string]string{
 			fmt.Sprintf("%s/%s", Keyspace, "nick"):    p.Nickname(),
 			fmt.Sprintf("%s/%s", Keyspace, "version"): Version,

@@ -11,7 +11,7 @@ import (
 func TestNick(t *testing.T) {
 
 	//	cli with testing env
-	app := new(delphiApp)
+	app := new(DelphiApp)
 	cli := hermeti.NewTestCli(app)
 
 	//	sub-command / args / flags
@@ -37,8 +37,8 @@ func TestNick(t *testing.T) {
 	assert.NotEqual(t, "divine-cloud\n", output.String())
 
 	//	Principal.Nickname() should be the same as Peer.Nickname()
-	nick1 := app.self.Nickname()
-	nick2 := app.self.PublicKey().Nickname()
+	nick1 := app.Self.Nickname()
+	nick2 := app.Self.PublicKey().Nickname()
 	assert.Equal(t, nick1, nick2)
 
 }

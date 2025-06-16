@@ -13,12 +13,12 @@ func readNextPem(b []byte) (p *pem.Block, rest []byte) {
 
 // show us all the PEMs on stdout
 // output non PEM data to stderr
-func (app *delphiApp) enumerate(env hermeti.Env) {
+func (app *DelphiApp) enumerate(env hermeti.Env) {
 
 	fmt.Fprintf(env.OutStream, "number of pems: %d\n\n", len(app.pems))
 
-	if !app.self.IsZero() {
-		fmt.Fprintln(env.OutStream, "I am ", app.self.Nickname())
+	if !app.Self.IsZero() {
+		fmt.Fprintln(env.OutStream, "I am ", app.Self.Nickname())
 	}
 
 	for typ, pemList := range app.pems {
