@@ -13,7 +13,7 @@ func TestWrap(t *testing.T) {
 
 	t.Run("with no randomness source", func(t *testing.T) {
 		//	instantiate CLI in test mode
-		app := new(delphiApp)
+		app := new(DelphiApp)
 		cli := hermeti.NewTestCli(app)
 		cli.Env.Args = []string{"delphi", "wrap"}
 
@@ -39,7 +39,7 @@ func TestWrap(t *testing.T) {
 
 	t.Run("with a randomness source", func(t *testing.T) {
 		//	instantiate CLI in test mode
-		app := new(delphiApp)
+		app := new(DelphiApp)
 		cli := hermeti.NewTestCli(app)
 		cli.Env.Args = []string{"delphi", "wrap"}
 		cli.Env.Randomness = rand.Reader

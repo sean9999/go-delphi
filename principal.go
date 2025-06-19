@@ -166,11 +166,11 @@ func (p Principal) MarshalBinary() ([]byte, error) {
 
 func (p *Principal) UnmarshalBinary(b []byte) error {
 
-	if len(b) != 4*keySize {
-		return pear.Errorf("wrong byte slice size. wanted %d but got %d", 4*keySize, len(b))
+	if len(b) != 4*KeySize {
+		return pear.Errorf("wrong byte slice size. wanted %d but got %d", 4*KeySize, len(b))
 	}
-	p[0] = KeyFromBytes(b[:2*keySize])
-	p[1] = KeyFromBytes(b[2*keySize:])
+	p[0] = KeyFromBytes(b[:2*KeySize])
+	p[1] = KeyFromBytes(b[2*KeySize:])
 	return nil
 }
 
@@ -183,8 +183,8 @@ func NewPrincipal(randy io.Reader) Principal {
 
 // From re-hydrates a [Principal] from a byte slice
 func (Principal) From(b []byte) (Principal, error) {
-	if len(b) < 4*keySize {
-		return Principal{}, fmt.Errorf("%w: not enough bytes. Expected %d but got %d", ErrBadKey, 4*keySize, len(b))
+	if len(b) < 4*KeySize {
+		return Principal{}, fmt.Errorf("%w: not enough bytes. Expected %d but got %d", ErrBadKey, 4*KeySize, len(b))
 	}
 	p := new(Principal)
 	err := p.UnmarshalBinary(b)
@@ -238,13 +238,13 @@ func (p *Principal) UnmarshalPEM(b pem.Block) error {
 	if b.Type != "DELPHI PRIVATE KEY" {
 		return errors.New("wrong type of PEM")
 	}
-	if len(b.Bytes) != keySize*4 {
-		return fmt.Errorf("wrong byte size for private key. wanted %d but got %d", keySize*4, len(b.Bytes))
+	if len(b.Bytes) != KeySize*4 {
+		return fmt.Errorf("wrong byte size for private key. wanted %d but got %d", KeySize*4, len(b.Bytes))
 	}
-	copy(p[0][0][:], b.Bytes[0:keySize])
-	copy(p[0][1][:], b.Bytes[keySize:keySize*2])
-	copy(p[1][0][:], b.Bytes[keySize*2:keySize*3])
-	copy(p[1][1][:], b.Bytes[keySize*3:])
+	copy(p[0][0][:], b.Bytes[0:KeySize])
+	copy(p[0][1][:], b.Bytes[KeySize:KeySize*2])
+	copy(p[1][0][:], b.Bytes[KeySize*2:KeySize*3])
+	copy(p[1][1][:], b.Bytes[KeySize*3:])
 	return nil
 }
 

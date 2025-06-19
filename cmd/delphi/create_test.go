@@ -48,7 +48,7 @@ func TestCreate(t *testing.T) {
 
 func BenchmarkCreate(b *testing.B) {
 
-	app := new(delphiApp)
+	app := new(DelphiApp)
 	cli := hermeti.NewTestCli(app)
 	cli.Env.Randomness = rand.Reader
 	cli.Env.Args = []string{"delphi", "create"}

@@ -12,10 +12,10 @@ import (
 	"slices"
 )
 
-const keySize = 32
+const KeySize = 32
 
 // a key is either: a public encryption, public signing, private encryption, or private signing key
-type key [keySize]byte
+type key [KeySize]byte
 
 // a subKey is zero if all it's bytes are zero
 func (s key) IsZero() bool {
@@ -48,8 +48,8 @@ func (k KeyPair) MarshalBinary() ([]byte, error) {
 }
 
 func (k *KeyPair) UnmarshalBinary(b []byte) error {
-	copy(k[0][:], b[:keySize])
-	copy(k[1][:], b[keySize:])
+	copy(k[0][:], b[:KeySize])
+	copy(k[1][:], b[KeySize:])
 	return nil
 }
 
@@ -71,8 +71,8 @@ func (k KeyPair) IsZero() bool {
 func (k KeyPair) From(b []byte) KeyPair {
 	var enc key
 	var sig key
-	copy(enc[:], b[:keySize])
-	copy(sig[:], b[keySize:])
+	copy(enc[:], b[:KeySize])
+	copy(sig[:], b[KeySize:])
 	var j KeyPair
 	j[0] = enc
 	j[1] = sig
@@ -88,9 +88,9 @@ func (kp KeyChain) IsZero() bool {
 }
 
 func (k KeyPair) Bytes() []byte {
-	b := make([]byte, 2*keySize)
-	copy(b[:keySize], k[0][:])
-	copy(b[keySize:], k[1][:])
+	b := make([]byte, 2*KeySize)
+	copy(b[:KeySize], k[0][:])
+	copy(b[KeySize:], k[1][:])
 	return b
 }
 
@@ -131,9 +131,9 @@ func (k KeyPair) Encryption() key {
 }
 
 func (k KeyChain) Bytes() []byte {
-	b := make([]byte, 4*keySize)
-	copy(b[:2*keySize], k[0].Bytes()) // public
-	copy(b[2*keySize:], k[1].Bytes()) // private
+	b := make([]byte, 4*KeySize)
+	copy(b[:2*KeySize], k[0].Bytes()) // public
+	copy(b[2*KeySize:], k[1].Bytes()) // private
 	return b
 }
 
@@ -152,14 +152,14 @@ func KeyFromHex(str string) KeyPair {
 func KeyFromBytes(b []byte) KeyPair {
 
 	gotSize := len(b)
-	wantSize := keySize * 2
+	wantSize := KeySize * 2
 
 	if gotSize != wantSize {
 		panic(fmt.Sprintf("wrong length for key. Wanted %d but got %d", wantSize, gotSize))
 	}
 	k := KeyPair{}
-	copy(k[0][:], b[:keySize])
-	copy(k[1][:], b[keySize:])
+	copy(k[0][:], b[:KeySize])
+	copy(k[1][:], b[KeySize:])
 	return k
 }
 
@@ -207,7 +207,7 @@ func NewKeyPair(randy io.Reader) KeyChain {
 	}
 
 	kp[0][1] = key(signPub)
-	kp[1][1] = key(signPriv[:keySize])
+	kp[1][1] = key(signPriv[:KeySize])
 
 	return kp
 }
