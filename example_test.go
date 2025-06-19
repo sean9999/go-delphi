@@ -20,7 +20,7 @@ func TestExample(t *testing.T) {
 	bob := delphi.NewPrincipal(rand.Reader)
 
 	//	create a message for bob, from alice
-	msg := delphi.NewMessage(rand.Reader, delphi.PlainMessage, sentence)
+	msg := delphi.ComposeMessage(rand.Reader, delphi.PlainMessage, sentence)
 	msg.SenderKey = alice.PublicKey()
 
 	//	add some metadata (this becomes AAD)
@@ -55,7 +55,7 @@ func Example() {
 	bob := delphi.NewPrincipal(rand.Reader)
 
 	//	create a message for bob, from alice
-	msg := delphi.NewMessage(rand.Reader, delphi.PlainMessage, sentence)
+	msg := delphi.ComposeMessage(rand.Reader, delphi.PlainMessage, sentence)
 	msg.SenderKey = alice.PublicKey()
 
 	//	add some metadata (this becomes AAD)

@@ -1,7 +1,6 @@
 package delphi
 
 import (
-	"encoding/json"
 	"fmt"
 	"iter"
 	"slices"
@@ -58,6 +57,6 @@ func (kv KV) LexicalOrder() iter.Seq2[string, string] {
 	}
 }
 
-func (kv KV) MarshalJSON() ([]byte, error) {
-	return json.MarshalIndent(kv, "", "\t")
-}
+// func (kv KV) MarshalJSON() ([]byte, error) {
+// 	return json.MarshalIndent(kv, "", "\t")
+// }

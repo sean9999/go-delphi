@@ -9,7 +9,7 @@ import (
 )
 
 // PluckPeer plucks out a public key from the [pemBag].
-func (app *DelphiApp) PluckPeer() (pubkey delphi.Key) {
+func (app *DelphiApp) PluckPeer() (pubkey delphi.KeyPair) {
 	peer := app.pems.Pluck(delphi.Pubkey)
 	if peer != nil {
 		//pubkey = delphi.KeyFromHex(string(peer.Bytes))

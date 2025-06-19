@@ -20,7 +20,7 @@ func Example() {
 
 	//	pipe in a PEM file
 	pubkey := delphi.KeyFromHex("72fadf46107f706dd32f19b9c7867f19d70129e6bbb37c107c62e16021b34116c87595508bc5129297572e016ed823564ee5796fb03528cd15e976ab89e1f087")
-	msg := delphi.NewMessage(nil, delphi.Pubkey, pubkey.Bytes())
+	msg := delphi.ComposeMessage(nil, delphi.Pubkey, pubkey.Bytes())
 	cli.Env.PipeIn(msg)
 
 	cli.Run()

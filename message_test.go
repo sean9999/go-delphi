@@ -15,7 +15,7 @@ func TestEncrypt(t *testing.T) {
 
 	alice := NewPrincipal(randy)
 	bob := NewPrincipal(randy)
-	msg := NewMessage(randy, "DELPHI PLAIN MESSAGE", sentence)
+	msg := ComposeMessage(randy, "DELPHI PLAIN MESSAGE", sentence)
 	msg.SenderKey = alice.PublicKey()
 
 	msg.Headers["foo"] = "bar"
@@ -36,7 +36,7 @@ func TestPEMIdempotent(t *testing.T) {
 	t.Run("plain message", func(t *testing.T) {
 
 		//	msg 1
-		msg1 := NewMessage(randy, "DELPHI PLAIN MESSAGE", sentence)
+		msg1 := ComposeMessage(randy, "DELPHI PLAIN MESSAGE", sentence)
 		msg1.Headers["foo"] = "bar"
 		msg1.Headers["bing"] = "bat"
 
@@ -85,7 +85,7 @@ func TestEncrypt_No_Recipient(t *testing.T) {
 
 	sentence := []byte("hello world")
 	alice := NewPrincipal(randy)
-	msg := NewMessage(randy, PlainMessage, sentence)
+	msg := ComposeMessage(randy, PlainMessage, sentence)
 	msg.SenderKey = alice[0]
 	noRecipient := NewKey(nil)
 	err := msg.Encrypt(randy, alice, noRecipient, nil)
@@ -98,7 +98,7 @@ func TestSign(t *testing.T) {
 
 	alice := NewPrincipal(randy)
 	bob := NewPrincipal(randy)
-	msg := NewMessage(randy, PlainMessage, []byte("hello world"))
+	msg := ComposeMessage(randy, PlainMessage, []byte("hello world"))
 	msg.SenderKey = alice[0]
 	msg.Sign(randy, alice)
 	digest, err := msg.Digest()

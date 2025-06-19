@@ -6,16 +6,16 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"slices"
 )
 
-// KeySize is 32 because we're dealing with ed25519
-const KeySize = 32
+const keySize = 32
 
-// a key is either a public encryption, public signing, private encryption, or private signing key
-type key [KeySize]byte
+// a key is either: a public encryption, public signing, private encryption, or private signing key
+type key [keySize]byte
 
 // a subKey is zero if all it's bytes are zero
 func (s key) IsZero() bool {
@@ -31,12 +31,26 @@ func (s key) Bytes() []byte {
 	return s[:]
 }
 
-// a KeyPair is either two public keys, or two private keys (one encryption, one signing)
+func NewPeer() Peer {
+	return KeyPair{}
+}
+
+// a KeyPair is two (specifically one encryption and one signing) keys
 type KeyPair [2]key
 
-func (k KeyPair) MarshalJson() ([]byte, error) {
+func (k KeyPair) MarshalJSON() ([]byte, error) {
 	str := k.ToHex()
-	return []byte(str), nil
+	return json.Marshal(str)
+}
+
+func (k KeyPair) MarshalBinary() ([]byte, error) {
+	return k.Bytes(), nil
+}
+
+func (k *KeyPair) UnmarshalBinary(b []byte) error {
+	copy(k[0][:], b[:keySize])
+	copy(k[1][:], b[keySize:])
+	return nil
 }
 
 func (k *KeyPair) UnmarshalJSON(b []byte) error {
@@ -57,16 +71,15 @@ func (k KeyPair) IsZero() bool {
 func (k KeyPair) From(b []byte) KeyPair {
 	var enc key
 	var sig key
-	copy(enc[:], b[:KeySize])
-	copy(sig[:], b[KeySize:])
+	copy(enc[:], b[:keySize])
+	copy(sig[:], b[keySize:])
 	var j KeyPair
 	j[0] = enc
 	j[1] = sig
 	return j
 }
 
-// a KeyChain is two [KeyPair]s. One public, one private.
-// It is the full set of key material necessary for encryption, decryption, signing, and verifying
+// a KeyChain is two [KeyPair]s. One public, one private
 type KeyChain [2]KeyPair
 
 // a KeyPair is zero if all it's keys are zero
@@ -75,9 +88,9 @@ func (kp KeyChain) IsZero() bool {
 }
 
 func (k KeyPair) Bytes() []byte {
-	b := make([]byte, 2*KeySize)
-	copy(b[:KeySize], k[0][:])
-	copy(b[KeySize:], k[1][:])
+	b := make([]byte, 2*keySize)
+	copy(b[:keySize], k[0][:])
+	copy(b[keySize:], k[1][:])
 	return b
 }
 
@@ -118,9 +131,9 @@ func (k KeyPair) Encryption() key {
 }
 
 func (k KeyChain) Bytes() []byte {
-	b := make([]byte, 4*KeySize)
-	copy(b[:2*KeySize], k[0].Bytes()) // public
-	copy(b[2*KeySize:], k[1].Bytes()) // private
+	b := make([]byte, 4*keySize)
+	copy(b[:2*keySize], k[0].Bytes()) // public
+	copy(b[2*keySize:], k[1].Bytes()) // private
 	return b
 }
 
@@ -137,14 +150,16 @@ func KeyFromHex(str string) KeyPair {
 }
 
 func KeyFromBytes(b []byte) KeyPair {
+
 	gotSize := len(b)
-	wantSize := KeySize * 2
+	wantSize := keySize * 2
+
 	if gotSize != wantSize {
 		panic(fmt.Sprintf("wrong length for key. Wanted %d but got %d", wantSize, gotSize))
 	}
 	k := KeyPair{}
-	copy(k[0][:], b[:KeySize])
-	copy(k[1][:], b[KeySize:])
+	copy(k[0][:], b[:keySize])
+	copy(k[1][:], b[keySize:])
 	return k
 }
 
@@ -192,7 +207,7 @@ func NewKeyPair(randy io.Reader) KeyChain {
 	}
 
 	kp[0][1] = key(signPub)
-	kp[1][1] = key(signPriv[:KeySize])
+	kp[1][1] = key(signPriv[:keySize])
 
 	return kp
 }

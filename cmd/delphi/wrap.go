@@ -11,7 +11,8 @@ import (
 func (app *DelphiApp) wrap(env hermeti.Env) {
 
 	body := app.inBuff.Bytes()
-	msg := delphi.NewMessage(env.Randomness, "DELPHI PLAIN MESSAGE", body)
+
+	msg := delphi.ComposeMessage(env.Randomness, "DELPHI PLAIN MESSAGE", body)
 
 	msg.SenderKey = app.Self.PublicKey()
 

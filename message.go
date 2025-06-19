@@ -12,7 +12,6 @@ import (
 	"io"
 
 	"github.com/sean9999/pear"
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 // the prefix for header keys
@@ -85,13 +84,13 @@ func (msg *Message) ensureNonce(randy io.Reader) Nonce {
 	return msg.Nonce
 }
 
-func (msg *Message) MarshalBinary() ([]byte, error) {
-	return msgpack.Marshal(msg)
-}
+// func (msg *Message) MarshalBinary() ([]byte, error) {
+// 	return msgpack.Marshal(msg)
+// }
 
-func (msg *Message) UnmarshalBinary(p []byte) error {
-	return msgpack.Unmarshal(p, msg)
-}
+// func (msg *Message) UnmarshalBinary(p []byte) error {
+// 	return msgpack.Unmarshal(p, msg)
+// }
 
 // type msgBody struct {
 // 	To    Key    `json:"to,omitzero,format:hex"`
@@ -363,8 +362,14 @@ func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, recipient Peer
 	return nil
 }
 
-// NewMessage creates a new Message. If you pass in a source of randomness, it will have a [Nonce].
-func NewMessage(randy io.Reader, subj Subject, plainTxt []byte) *Message {
+func NewMessage() *Message {
+	msg := new(Message)
+	msg.Headers = make(KV)
+	return msg
+}
+
+// ComposeMessage creates a new Message. If you pass in a source of randomness, it will have a [Nonce].
+func ComposeMessage(randy io.Reader, subj Subject, plainTxt []byte) *Message {
 	msg := new(Message)
 	msg.Headers = make(KV)
 	msg.PlainText = plainTxt

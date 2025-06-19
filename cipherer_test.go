@@ -30,7 +30,7 @@ func (m *MockCipherer) Public() crypto.PublicKey {
 
 func TestCipherer_Encrypt(t *testing.T) {
 	cipherer := &MockCipherer{}
-	msg := NewMessage(rand.Reader, PlainMessage, []byte("hello world"))
+	msg := ComposeMessage(rand.Reader, PlainMessage, []byte("hello world"))
 
 	err := cipherer.Encrypt(rand.Reader, msg, nil)
 	assert.NoError(t, err)
@@ -39,7 +39,7 @@ func TestCipherer_Encrypt(t *testing.T) {
 
 func TestCipherer_Decrypt(t *testing.T) {
 	cipherer := &MockCipherer{}
-	msg := NewMessage(rand.Reader, PlainMessage, []byte("hello world"))
+	msg := ComposeMessage(rand.Reader, PlainMessage, []byte("hello world"))
 	msg.CipherText = []byte("encrypted")
 
 	priv := ed25519.NewKeyFromSeed(make([]byte, ed25519.SeedSize))
