@@ -8,7 +8,7 @@ import (
 )
 
 func TestSubKey_IsZero(t *testing.T) {
-	var zeroSubKey key
+	var zeroSubKey subKey
 	assert.True(t, zeroSubKey.IsZero())
 
 	nonZeroSubKey := NewSubKey(rand.Reader)
@@ -16,7 +16,7 @@ func TestSubKey_IsZero(t *testing.T) {
 }
 
 func TestKey_IsZero(t *testing.T) {
-	var zeroKey KeyPair
+	var zeroKey Key
 	assert.True(t, zeroKey.IsZero())
 
 	nonZeroKey := NewKey(rand.Reader)
@@ -24,7 +24,7 @@ func TestKey_IsZero(t *testing.T) {
 }
 
 func TestKeyPair_IsZero(t *testing.T) {
-	var zeroKeyPair KeyChain
+	var zeroKeyPair KeyPair
 	assert.True(t, zeroKeyPair.IsZero())
 
 	nonZeroKeyPair := NewKeyPair(rand.Reader)

@@ -25,8 +25,8 @@ var ErrNotImplemented = errors.New("not implemented")
 type Message struct {
 	readBuffer   []byte  `msgpack:"-"`
 	Subject      Subject `msgpack:"subj" json:"subj"`
-	RecipientKey KeyPair `msgpack:"to" json:"to"`
-	SenderKey    KeyPair `msgpack:"from" json:"from"`
+	RecipientKey Key     `msgpack:"to" json:"to"`
+	SenderKey    Key     `msgpack:"from" json:"from"`
 	Headers      KV      `msgpack:"hdrs" json:"hdrs"` // additional authenticated data (AAD)
 	Eph          []byte  `msgpack:"eph" json:"eph"`
 	Nonce        Nonce   `msgpack:"nonce" json:"nonce"`
@@ -194,13 +194,13 @@ func (msg *Message) FromPEM(p pem.Block) error {
 			if err != nil {
 				return err
 			}
-			msg.SenderKey = KeyPair{}.From(pubKeyBytes)
+			msg.SenderKey = Key{}.From(pubKeyBytes)
 		case "to":
 			pubKeyBytes, err := extractB64(p.Headers, "to")
 			if err != nil {
 				return err
 			}
-			msg.RecipientKey = KeyPair{}.From(pubKeyBytes)
+			msg.RecipientKey = Key{}.From(pubKeyBytes)
 		case "eph":
 			bin, err := extractB64(p.Headers, "eph")
 			if err != nil {
@@ -341,8 +341,8 @@ func (msg *Message) Sign(randy io.Reader, signer crypto.Signer) error {
 func (msg *Message) Verify() bool {
 	digest, err := msg.Digest()
 	if err != nil {
-		panic(err)
-	} // TODO: do we really want to panic here?
+		return false
+	}
 	pubKey := ed25519.PublicKey(msg.SenderKey.Signing().Bytes())
 	return ed25519.Verify(pubKey, digest, msg.Sig)
 }

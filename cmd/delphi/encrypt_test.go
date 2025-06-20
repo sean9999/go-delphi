@@ -48,7 +48,7 @@ func TestEncrypt(t *testing.T) {
 
 	assert.False(t, delphi.Nonce.IsZero(msg.Nonce))
 
-	assert.Len(t, msg.Eph, delphi.KeySize)
+	assert.Len(t, msg.Eph, delphi.SubKeySize)
 
 	assert.Equal(t, "falling-grass", msg.RecipientKey.Nickname())
 	assert.Equal(t, "bitter-frost", msg.SenderKey.Nickname())

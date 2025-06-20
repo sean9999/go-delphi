@@ -8,7 +8,7 @@ import (
 type EncrypterOpts = any
 
 type Encrypter interface {
-	Encrypt(io.Reader, *Message, KeyPair, EncrypterOpts) error
+	Encrypt(io.Reader, *Message, Key, EncrypterOpts) error
 }
 
 type Decrypter interface {
