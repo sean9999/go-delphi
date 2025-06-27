@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"encoding/pem"
 
@@ -235,9 +236,11 @@ func (p Principal) MarshalPEM() (pem.Block, error) {
 }
 
 func (p *Principal) UnmarshalPEM(b pem.Block) error {
-	if b.Type != "DELPHI PRIVATE KEY" {
+
+	if !strings.Contains(b.Type, "PRIVATE KEY") && !strings.Contains(b.Type, "PRINCIPAL") {
 		return errors.New("wrong type of PEM")
 	}
+
 	if len(b.Bytes) != SubKeySize*4 {
 		return fmt.Errorf("wrong byte size for private key. wanted %d but got %d", SubKeySize*4, len(b.Bytes))
 	}

@@ -3,3 +3,5 @@ go.work.sum
 *.tmp
 *.log
 *.cov
+*.code-workspace
+
