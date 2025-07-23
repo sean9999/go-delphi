@@ -363,19 +363,19 @@ func (msg *Message) Encrypt(randy io.Reader, encrypter Encrypter, recipient Peer
 }
 
 func NewMessage() *Message {
-	msg := new(Message)
-	msg.Headers = make(KV)
-	return msg
+	msg := Message{}
+	msg.Headers = KV{}
+	return &msg
 }
 
 // ComposeMessage creates a new Message. If you pass in a source of randomness, it will have a [Nonce].
 func ComposeMessage(randy io.Reader, subj Subject, plainTxt []byte) *Message {
-	msg := new(Message)
-	msg.Headers = make(KV)
+	msg := Message{}
+	msg.Headers = KV{}
 	msg.PlainText = plainTxt
 	msg.Subject = subj
 	if randy != nil {
 		msg.ensureNonce(randy)
 	}
-	return msg
+	return &msg
 }

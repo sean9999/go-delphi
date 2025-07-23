@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// a KV is a simple map with some super powers useful to us
+// A KV is a simple map with some super powers useful to us
 type KV map[string]string
 
 func (kv KV) Set(keyspace string, key string, val string) {
