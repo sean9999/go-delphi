@@ -1,13 +1,17 @@
 package delphi
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type Subject string
 
-func (subj Subject) Equals(str string) bool {
+// Equals returns true if any string-like value is the same as subj (case insensitive)
+func (subj Subject) Equals(str any) bool {
 	a := strings.ToUpper(string(subj))
-	b := strings.ToUpper(str)
-	return (a == b)
+	b := strings.ToUpper(fmt.Sprintf("%s", str))
+	return a == b
 }
 
 func (subj Subject) String() string {

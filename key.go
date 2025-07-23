@@ -190,6 +190,10 @@ func NewKeyPair(randy io.Reader) KeyPair {
 
 	var kp KeyPair
 
+	if randy == nil {
+		return kp
+	}
+
 	//	encryption keys
 	ed := ecdh.X25519()
 	encryptionPriv, err := ed.GenerateKey(randy)
